@@ -11,18 +11,18 @@
 \section{Introduction}
 
 
-Few-shot NVS presents a challenging task in computer vision, wherein the objective is to generate an image from an unobserved viewpoint using only a limited number of source images and their corresponding camera pose information. The present work addresses an even more intricate scenario, which exclusively relies on a unique source image. The problem is inherently ill-posed as a single source image may not provide enough visual clues to generate a novel viewpoint. Handling unforeseen elements as well as occlusions becomes particularly challenging in this scenario. To effectively tackle these challenges, leveraging 3D priors \cite{saito2019pifu,johari2022geonerf} is fundamental since it enables deep architectures to acquire a primary understanding of the underlying 3D scene structure. 
+Few-shot NVS presents a challenging task in computer vision, wherein the objective is to generate an image from an unobserved viewpoint using only a limited number of source images and their corresponding camera pose information. The present work addresses an even more intricate scenario, which exclusively relies on a unique source image. The problem is inherently ill-posed as a single source image may not provide enough visual clues to generate a novel viewpoint. Handling unforeseen elements as well as occlusions becomes particularly challenging in this scenario. To effectively tackle these challenges, leveraging 3D priors \citep{saito2019pifu,johari2022geonerf} is fundamental since it enables deep architectures to acquire a primary understanding of the underlying 3D scene structure. 
 
-Recent advances in neural rendering \cite{tewari2022advances} significantly drive latest works in the few shot NVS issue. While original neural radiance field (NeRF) \cite{mildenhall2020nerf} allows to represent a scene through a learned overfitted 5D function, it does not have any generalization abilities. Latest contributions \cite{pixelnerf,symmnerf,visionnerf} designed low-resolution 2D feature \textbf{F} conditioning to tackle such a limitation, mostly by leveraging on an image encoder. Produced feature volume is sampled at training and testing time through pixel-aligned bilinear interpolation to \textit{locally} condition the radiance field. However, the deep feature is aligned with the source view: occlusions and unobserved parts therefore lead to misaligned and coarsely-local feature sampling on \textbf{F}, producing non-optimal conditioning. 
+Recent advances in neural rendering \citep{tewari2022advances} significantly drive latest works in the few shot NVS issue. While original neural radiance field (NeRF) \citep{mildenhall2020nerf} allows to represent a scene through a learned overfitted 5D function, it does not have any generalization abilities. Latest contributions \citep{yu2021pixelnerf,li2022symmnerf,lin2023vision} designed low-resolution 2D feature \textbf{F} conditioning to tackle such a limitation, mostly by leveraging on an image encoder. Produced feature volume is sampled at training and testing time through pixel-aligned bilinear interpolation to \textit{locally} condition the radiance field. However, the deep feature is aligned with the source view: occlusions and unobserved parts therefore lead to misaligned and coarsely-local feature sampling on \textbf{F}, producing non-optimal conditioning. 
 
 \begin{figure}[htp!]
     \center
-  \includegraphics[width=.65\textwidth]{figures/abstract_figure.png}
-  \caption{Comparison with state-of-the-art methods, both in RGB space as well as on feature space. Existing methods rely only on source-aligned features. In contrast, the proposed method uses both a source and a target-aligned features to predict the image associated to the target view, leading to a better quality rendering. In this example, VisionNeRF \cite{visionnerf} correctly synthesised the rear wing, but fails to render the yellow and blue checkerboard painted on both car' sides. If SymmNeRF \cite{symmnerf} manages to reproduce such a pattern, it lacks details on the rear wing too.}
+  \includegraphics[width=.65\textwidth]{images/epinerf/abstract_figure.png}
+  \caption{Comparison with state-of-the-art methods, both in RGB space as well as on feature space. Existing methods rely only on source-aligned features. In contrast, the proposed method uses both a source and a target-aligned features to predict the image associated to the target view, leading to a better quality rendering. In this example, VisionNeRF \citep{lin2023vision} correctly synthesised the rear wing, but fails to render the yellow and blue checkerboard painted on both car' sides. If SymmNeRF \citep{li2022symmnerf} manages to reproduce such a pattern, it lacks details on the rear wing too.}
   \label{fig:res_car_intro}
 \end{figure}
 
-Our work therefore try to address such limitations by producing target-aligned features from a feature radiance field, called NeRFeature. Associated training is supported through a light feature distillation procedure, by leveraging on a CNN encoder-decoder as teacher network. Target oriented feature (from the NeRFeature student radiance field) is then involved (with its source-aligned counterpart) in an epipolar-based attention mechanism: it shrinks the weights sampling distribution around regions where source and target features match, allowing better sampling during neural rendering. Corresponding results, both in RGB and feature space can is illustrated on Figure \ref{fig:res_car_intro}. We conducted extensive ex\--periments and ablations studies to motivate our claims, whereas our architecture outperforms most of current state-of-the art methods on the ShapeNet dataset \cite{chang2015shapenet}. Our contributions are threefold and can be summarised through: 
+Our work therefore try to address such limitations by producing target-aligned features from a feature radiance field, called NeRFeature. Associated training is supported through a light feature distillation procedure, by leveraging on a CNN encoder-decoder as teacher network. Target oriented feature (from the NeRFeature student radiance field) is then involved (with its source-aligned counterpart) in an epipolar-based attention mechanism: it shrinks the weights sampling distribution around regions where source and target features match, allowing better sampling during neural rendering. Corresponding results, both in RGB and feature space can is illustrated on Figure \ref{fig:res_car_intro}. We conducted extensive ex\--periments and ablations studies to motivate our claims, whereas our architecture outperforms most of current state-of-the art methods on the ShapeNet dataset \citep{chang2015shapenet}. Our contributions are threefold and can be summarised through: 
 \begin{enumerate}
    \item A learned feature radiance field, called NeRFeature. Given a source-aligned feature and a camera transformation, NeRFeature aims to infer the correspond\--ing target-aligned deep feature trough a light feature distillation procedure, that do not involve any heavy foundation models (section \ref{subsec:nerfeature}). 
     \item A simple yet effective epipolar-based attention mechanism that relies on source and target aligned features and which adjust the weights sampling distribution during volume rendering (section \ref{subsec:epipolar_att}). 
@@ -31,37 +31,34 @@ Our work therefore try to address such limitations by producing target-aligned f
 
 \section{Related work}
 
-\noindent\textbf{Single-image novel view synthesis.} Novel view synthesis aims to render an image of a scene from a an unobserved viewpoint, given a set of posed images, i.e. images and the associated camera poses (3D position and orientation). NVS has been widely studied over the last few decades from both graphics and computer vision perspectives. Early pioneer works \cite{chen93view,levoy96light,fitzgibbon2005image} mostly relied on graphics and multi-view geometry concepts, such as light field, warping or blending operations to synthesise novel view. However, synthesising a viewpoint from a different location based on a single image is an ill-posed task. Occluded parts cannot be easily recovered in this scenario, as the 3D scene cannot be triangulated. The recent breakthrough of deep networks has opened the door for learning-based methods. While fully convolutional-based networks first appeared in the devoted literature \cite{zhou2016view,sun2018multi,kim2020novel,hou2021novel,guo2022fast,nvs_ours}, the emergence of neural radiance fields \cite{mildenhall2020nerf} and neural rendering \cite{tewari2022advances} highly influenced the way single-view novel view synthesis architectures \cite{pixelnerf,symmnerf,visionnerf} are built. Introducing explicit 3D concepts (regarding camera pose, implicit or neural 3D reasoning etc) within architectures significantly help deep neural networks to better address such 3D vision task relying on implicit representations. Latest research directions in single-image NVS pushes toward extremely large deep networks, such as image-conditioned diffusion models\cite{chen2023single,xiong2023light,chan2023generative,yu2023long}. Note that, recent advances in large 3D reconstruction \cite{hong2023lrm} use even bigger models, that are able to explicitly grasp the whole 3D structure of an object from a single view \cite{liu2023zero,shi2023zero123++,liu2024one,liu2023one2345++,zou2023triplane}. However, these diffusion-based architectures remain complex to train and have poor speed inference performances.  
-\newpage
+\noindent\textbf{Single-image novel view synthesis.} Novel view synthesis aims to render an image of a scene from a an unobserved viewpoint, given a set of posed images, i.e. images and the associated camera poses (3D position and orientation). NVS has been widely studied over the last few decades from both graphics and computer vision perspectives. Early pioneer works \citep{chen93view,levoy96light,fitzgibbon2005image} mostly relied on graphics and multi-view geometry concepts, such as light field, warping or blending operations to synthesise novel view. However, synthesising a viewpoint from a different location based on a single image is an ill-posed task. Occluded parts cannot be easily recovered in this scenario, as the 3D scene cannot be triangulated. The recent breakthrough of deep networks has opened the door for learning-based methods. While fully convolutional-based networks first appeared in the devoted literature \citep{zhou2016view,sun2018multi,kim2020novel,hou2021novel,guo2022fast,landreau2022epipolarnvs}, the emergence of neural radiance fields \citep{mildenhall2020nerf} and neural rendering \citep{tewari2022advances} highly influenced the way single-view novel view synthesis architectures \citep{yu2021pixelnerf,li2022symmnerf,lin2023vision} are built. Introducing explicit 3D concepts (regarding camera pose, implicit or neural 3D reasoning etc) within architectures significantly help deep neural networks to better address such 3D vision task relying on implicit representations. Latest research directions in single-image NVS pushes toward extremely large deep networks, such as image-conditioned diffusion models\citep{chen2023single,xiong2023light,chan2023genvs,yu2023long}. Note that, recent advances in large 3D reconstruction \citep{hong2023lrm} use even bigger models, that are able to explicitly grasp the whole 3D structure of an object from a single view \citep{liu2023zero,shi2023zero123++,liu2024one,liu2023one2345++,zou2023triplane}. However, these diffusion-based architectures remain complex to train and have poor speed inference performances.  
 
-\noindent\textbf{3D Geometry prior in single-image NVS.} Few works attempted to integrate geometrical priors within their single-image NVS architecture. Whereas Epipolar\--NVS \cite{nvs_ours} directly incorporates the geometrical camera transformation through a finite set of epipolar lines, SymmNeRF \cite{symmnerf} integrates a symmetrical constraint with a simple yet effective assumption in the canonical coordinates system. 
+\noindent\textbf{3D Geometry prior in single-image NVS.} Few works attempted to integrate geometrical priors within their single-image NVS architecture. Whereas Epipolar\--NVS \citep{landreau2022epipolarnvs} directly incorporates the geometrical camera transformation through a finite set of epipolar lines, SymmNeRF \citep{li2022symmnerf} integrates a symmetrical constraint with a simple yet effective assumption in the canonical coordinates system. 
 \newline
 
-\noindent\textbf{Generalizable NeRF conditioning.} Introduced in Mildenhall's \etal \cite{mildenhall2020nerf} work, a neural radiance field $\psi$ aims to implicitly represent the inherent geometry and appearance of a scene. In its original formulation, a set of posed images $\{I,\pi = K[R|t]\}$ is sufficient to learn such a radiance field. Given a 3D point in world space $\mathbf{x} \in \mathbb{R}^{3}$ along a ray and its viewing direction $\mathbf{d} \in \mathbb{R}^{3}$, a vanilla RGB radiance field is entirely defined through its density $\sigma_{\psi}(\mathbf{x})\in \mathbb{R}_{+}$  and an RGB colour $c_{\psi}(\mathbf{x},\mathbf{d}) \in \mathbb{R}^{3}$. 
-A differentiable volume rendering operation \cite{Max1995OpticalMF} is performed to render the final composite RGB color $\hat{c}$ along the ray. 
+\noindent\textbf{Generalizable NeRF conditioning.} Introduced in Mildenhall's \etal \citep{mildenhall2020nerf} work, a neural radiance field $\psi$ aims to implicitly represent the inherent geometry and appearance of a scene. In its original formulation, a set of posed images $\{I,\pi = K[R|t]\}$ is sufficient to learn such a radiance field. Given a 3D point in world space $\mathbf{x} \in \mathbb{R}^{3}$ along a ray and its viewing direction $\mathbf{d} \in \mathbb{R}^{3}$, a vanilla RGB radiance field is entirely defined through its density $\sigma_{\psi}(\mathbf{x})\in \mathbb{R}_{+}$  and an RGB colour $c_{\psi}(\mathbf{x},\mathbf{d}) \in \mathbb{R}^{3}$. 
+A differentiable volume rendering operation \citep{max1995optical} is performed to render the final composite RGB color $\hat{c}$ along the ray. 
 
-However, this formulation prevents $\psi$ to generalise across multiple scenes. While plethora works nowadays rely on deep feature volume to condition their neural architecture \cite{saito2019pifu,wang2021ibrnet,chen2023matchnerf}, PixelNeRF \cite{pixelnerf} has paved the way to such limitation in single-image NVS. It locally conditions its radiance field using pixel-wise source aligned features, obtained from a CNN encoder-decoder. 
+However, this formulation prevents $\psi$ to generalise across multiple scenes. While plethora works nowadays rely on deep feature volume to condition their neural architecture \citep{saito2019pifu,wang2021ibrnet,chen2023matchnerf}, PixelNeRF \citep{yu2021pixelnerf} has paved the way to such limitation in single-image NVS. It locally conditions its radiance field using pixel-wise source aligned features, obtained from a CNN encoder-decoder. 
 
 Such a $d_{\text{feat}}$-dimensional pixel-aligned feature is obtained through the perspective projection of a 3D point onto the  source-aligned feature volume.
 
 \begin{equation}
-\begin{align*}
-    c_{\psi} \colon \mathbb{R}^{3}\times\mathbb{R}^{3}\times\mathbb{R}^{d_{\text{feat}}} & \longrightarrow \mathbb{R}^{3}  \\
-    \textbf{x},\textbf{d}, f & \longmapsto  c_{\psi}(\textbf{x},\textbf{d}, f)
-\end{align*}
+    c_{\psi} \colon \mathbb{R}^{3}\times\mathbb{R}^{3}\times\mathbb{R}^{d_{\text{feat}}}  \longrightarrow \mathbb{R}^{3}  \\
+    \textbf{x},\textbf{d}, f  \longmapsto  c_{\psi}(\textbf{x},\textbf{d}, f)
 \end{equation}
 
 
-Such a \textit{local} -input based- conditioning is now commonly adopted in devoted literature \cite{codenerf,symmnerf,visionnerf}, even through VisionNeRF \cite{visionnerf} also claims a \textit{global} input conditioning of its radiance field through a vision transformer (ViT) \cite{dosovitskiy2020vit} they embedded in their architecture. \newline
+Such a \textit{local} -input based- conditioning is now commonly adopted in devoted literature \citep{jang2021codenerf,li2022symmnerf,lin2023vision}, even through VisionNeRF \citep{lin2023vision} also claims a \textit{global} input conditioning of its radiance field through a vision transformer (ViT) \citep{dosovitskiy2020vit} they embedded in their architecture. \newline
 
-\noindent\textbf{Feature distillation in NeRF.} A radiance field can be extended to output additional features of interest, and thus go beyond RGB space, as soon as a supervisory signal exists to train such an architecture. Several approaches can thus be derived from the original neural radiance fields seminal work, including BRDF-based methods \cite{Boss_2021_ICCV,verbin2022ref}, deep latent feature-based methods \cite{kobayashi2022decomposing,ye2023featurenerf,chan2023genvs}, or even methods that are parametrized to handle dynamic scenes \cite{pumarola2021d,yan2023nerf}. From a feature distillation perspective, research from \cite{hinton2015distilling} paved the way, mostly to tackle both knowledge transfer and model compression issues. Few works already attempted to distill feature from a 2D model (such as a CNN or a ViT) into 3D through the use of neural radiance fields \cite{kobayashi2022decomposing, tschernezki2022neural}. \cite{ye2023featurenerf} is the closest work, regarding our first contribution consisting in learning feature radiance field in the spirit of a teacher-student framework. However, the authors in \cite{ye2023featurenerf} distilled learned feature from a 2D foundation model \cite{oquab2023dinov2} while we propose a lighter feature distillation procedure. 
+\noindent\textbf{Feature distillation in NeRF.} A radiance field can be extended to output additional features of interest, and thus go beyond RGB space, as soon as a supervisory signal exists to train such an architecture. Several approaches can thus be derived from the original neural radiance fields seminal work, including BRDF-based methods \citep{boss2021nerd,verbin2022ref}, deep latent feature-based methods \citep{kobayashi2022decomposing,ye2023featurenerf,chan2023genvs}, or even methods that are parametrized to handle dynamic scenes \citep{pumarola2021d,yan2023nerf}. From a feature distillation perspective, research from \citep{hinton2015distilling} paved the way, mostly to tackle both knowledge transfer and model compression issues. Few works already attempted to distill feature from a 2D model (such as a CNN or a ViT) into 3D through the use of neural radiance fields \citep{kobayashi2022decomposing, tschernezki2022neural}. \citep{ye2023featurenerf} is the closest work, regarding our first contribution consisting in learning feature radiance field in the spirit of a teacher-student framework. However, the authors in \citep{ye2023featurenerf} distilled learned feature from a 2D foundation model \citep{oquab2023dinov2} while we propose a lighter feature distillation procedure. 
 
 \section{Method}
 
 We present an overview of our architecture on Figure \ref{fig:overview}. Following subsections are devoted to the different sub-modules EpiNeRF has and how they have been built.
 \begin{figure*}[htb!]
     \center
-  \includegraphics[height=6.3cm]{figures/overview_architecture.png}
+  \includegraphics[height=8cm]{images/epinerf/overview_architecture.png}
   \caption{\textbf{Overview of our complete two-stage training EpiNeRF architecture.} (Top left) The first step primarily aims to train our CNN encoder-decoder $\chi$, which can subsequently generates \textit{local} deep features aligned with $I_{s}$. (Top right) Our CNN $\chi$ is then used a teacher model to instruct a residual NeRF student model $\Psi$, termed NeRFeature, to generate such features from any target viewpoint. (Bottom) The second stage training of EpiNeRF is more likely a fine-tuning of both $\chi$ and $\Phi$, with a modified attention epipolar-based volume rendering equation, thanks to the target-aligned feature produced by NeRFeature $\Psi$.}
   \label{fig:overview}
 \end{figure*}
@@ -100,7 +97,7 @@ with $\delta_{i}=\mathbf{x}^{(i+1)}-\mathbf{x}^{(i)}$  the distance between two 
 \subsection{Feature-based epipolar attention}
 \label{subsec:epipolar_att}
 
-As soon as deep feature from $\chi$ has been distilled into the NeRFeature $\Psi$, target-aligned features can be synthesized by solely requiring the source-aligned feature and the corresponding camera relative transformation. A cross-attention distribution \cite{vaswani2017attention} can therefore be computed with such source-aligned features, that all lie on the epipolar line defined by the sampled pixel on the target view. In this way, for any 3D point $\mathbf{x}^{(i)}$, a cross-attention score is obtained from: 
+As soon as deep feature from $\chi$ has been distilled into the NeRFeature $\Psi$, target-aligned features can be synthesized by solely requiring the source-aligned feature and the corresponding camera relative transformation. A cross-attention distribution \citep{vaswani2017attention} can therefore be computed with such source-aligned features, that all lie on the epipolar line defined by the sampled pixel on the target view. In this way, for any 3D point $\mathbf{x}^{(i)}$, a cross-attention score is obtained from: 
 
 \begin{equation}
     s_{a}^{(i)} = softmax\left(\frac{f_{t}^{T}\times f_{s}^{(i)}}{\sqrt{d_{\text{feat}}}}\right) \in [0,1].
@@ -109,7 +106,7 @@ As soon as deep feature from $\chi$ has been distilled into the NeRFeature $\Psi
 
 The entire distribution $\textbf{s}_{a} \in \mathbb{R}^{N_{s}}$ is obtained by gathering the cross-attention scores for all the $N_s$ projected samples (that all lie on the epipolar line in the source view domain). 
 
-Such an attention score gives an idea of how closed source-aligned features are from the target feature, predicted by $\Psi$. Since it exists an epipolar-based relationship between the location $f_{s}^{(i)}$ and $f_{t}$, the score distribution $\mathbf{s}_{a}$ should has a maximum at the location where target and source pixels exhibit the same content. Associated observation is illustrated on Figure \ref{fig:attention-illustration}. The cross-attention $\mathbf{s}_{a}$ is not used to weight the $\mathbf{f}_{s}$ distribution in the RGB-volume rendering \cite{Max1995OpticalMF} but rather to adjust the weights distribution $\omega$ that is going to be involved through the inverse transform sampling strategy \cite{mildenhall2020nerf} in the fine NeRF network: 
+Such an attention score gives an idea of how closed source-aligned features are from the target feature, predicted by $\Psi$. Since it exists an epipolar-based relationship between the location $f_{s}^{(i)}$ and $f_{t}$, the score distribution $\mathbf{s}_{a}$ should has a maximum at the location where target and source pixels exhibit the same content. Associated observation is illustrated on Figure \ref{fig:attention-illustration}. The cross-attention $\mathbf{s}_{a}$ is not used to weight the $\mathbf{f}_{s}$ distribution in the RGB-volume rendering \citep{max1995optical} but rather to adjust the weights distribution $\omega$ that is going to be involved through the inverse transform sampling strategy \citep{mildenhall2020nerf} in the fine NeRF network: 
 
 \begin{equation}
     \omega_{i} = s_{a}^{(i)} \left(1 - \exp(-\delta_{i}\sigma^{(i)})\right)T_{\sigma}(i).
@@ -118,19 +115,19 @@ Such an attention score gives an idea of how closed source-aligned features are 
 
 \subsection{EpiNeRF: the complete architecture}
 \label{subsec:epinerf}
-\noindent\textbf{CNN-based source-aligned features.} Plethora of recent NeRF-based NVS works leverage their radiance field on a source-aligned feature volume $\mathbf{F}_{s}$, obtained from either a CNN \cite{codenerf,pixelnerf,symmnerf} or a ViT \cite{visionnerf}. However, intermediate features produced by the inner encoder, termed $(\mathbf{F}_{1},\mathbf{F}_{2},\mathbf{F}_{3},\mathbf{F}_{4})$ here,  are often fused and upscaled in a vanilla way, through bilinear upsampling and concatenation in the CNN decoder. The final low-resolution feature volume $\mathbf{F}_{s}$ is obtained through: 
+\noindent\textbf{CNN-based source-aligned features.} Plethora of recent NeRF-based NVS works leverage their radiance field on a source-aligned feature volume $\mathbf{F}_{s}$, obtained from either a CNN \citep{jang2021codenerf,yu2021pixelnerf,li2022symmnerf} or a ViT \citep{lin2023vision}. However, intermediate features produced by the inner encoder, termed $(\mathbf{F}_{1},\mathbf{F}_{2},\mathbf{F}_{3},\mathbf{F}_{4})$ here,  are often fused and upscaled in a vanilla way, through bilinear upsampling and concatenation in the CNN decoder. The final low-resolution feature volume $\mathbf{F}_{s}$ is obtained through: 
 \begin{equation}
     \mathbf{F}_{s} = \left[\mathbf{F}_{1}^{up} || \mathbf{F}_{2}^{up} || \mathbf{F}_{3}^{up} || \mathbf{F}_{4}^{up}\right] \in \mathbb{R}^{2d_{\text{feat}} \times \frac{H}{2} \times \frac{W}{2}}
 \end{equation}
 where the $[.||.]$ denotes the vanilla concatenation. 
 
-Such a source-aligned feature volume can be built differently, by accounting on residual connections and atrous convolutions, as \cite{chan2023generative} did too. 
-EpiNeRF thus rather gets consideration for DeepLabV3+ \cite{deeplabv3plus} as a backbone decoder for the feature volume $\textbf{F}_{s}\in \mathbb{R}^{d_{\text{feat}} \times H \times W}$.  Both upscaling and merging strategies are presented on the Figure \ref{fig:feature_encoder}. 
+Such a source-aligned feature volume can be built differently, by accounting on residual connections and atrous convolutions, as \citep{chan2023genvs} did too. 
+EpiNeRF thus rather gets consideration for DeepLabV3+ \citep{chen2018encoder} as a backbone decoder for the feature volume $\textbf{F}_{s}\in \mathbb{R}^{d_{\text{feat}} \times H \times W}$.  Both upscaling and merging strategies are presented on the Figure \ref{fig:feature_encoder}. 
 
 \begin{figure*}[htb!]
     \center
-  \includegraphics[height=3.5cm]{figures/feature_fusion_encoder.png}
-  \caption{Overview of the CNN decoder $\chi$ involved in SymmNeRF (left) and in our configuration by leveraging on DeepLabV3+ (right). One might note that $\chi$ in both case leverages a ResNet34-based encoder \cite{he2016deep}. }
+  \includegraphics[height=3.5cm]{images/epinerf/feature_fusion_encoder.png}
+  \caption{Overview of the CNN decoder $\chi$ involved in SymmNeRF (left) and in our configuration by leveraging on DeepLabV3+ (right). One might note that $\chi$ in both case leverages a ResNet34-based encoder \citep{he2016deep}. }
   \label{fig:feature_encoder}
 \end{figure*}
 EpiNeRF's feature volume has therefore the same resolution as the input image $\mathbf{I}_s$. While pixel-aligned features are bilinearly interpolated through a 2$\times$2 window, a larger resolution allows better local features sampling that are going to condition the radiance field. \newline
@@ -146,7 +143,7 @@ and $\Phi$ is thus  both \textit{locally} (on its input) and  \textit{globally} 
 \end{equation}\newline
 
 \noindent\textbf{Symmetry prior integration.}
-Following SymmNeRF \cite{symmnerf} prior work, we made the assumption the (YZ) plane in the canonical coordinates system was a symmetry plane for the implicit 3D scenes we are aiming to reconstruct. It thus involves that a 3D point $\mathbf{x}$ along a target ray \textbf{r} has a symmetrical point with respect to the (YZ)-symmetry plane through:
+Following SymmNeRF \citep{li2022symmnerf} prior work, we made the assumption the (YZ) plane in the canonical coordinates system was a symmetry plane for the implicit 3D scenes we are aiming to reconstruct. It thus involves that a 3D point $\mathbf{x}$ along a target ray \textbf{r} has a symmetrical point with respect to the (YZ)-symmetry plane through:
 \begin{equation}
     \mathbf{x}^{(i)}_{symm} = \mathbf{M}\mathbf{x}^{(i)}
 \end{equation}
@@ -174,13 +171,13 @@ Deep features produced by NeRFeature are implicitly input-conditioned by $\chi$ 
 
 The second fine tuning training stage is trained in a similar way to the first one, even though NeRFeature weights are now frozen to produce target-aligned features. 
 
-We followed the training strategy that SymmNeRF \cite{symmnerf} and VisionNeRF \cite{visionnerf} used for $\chi$ and $\Phi$ in both stages and formed batches of 4 images during training, averaged our loss function over 256 rays, and sampled a total of $N_{s}=192$ points along each ray.
+We followed the training strategy that SymmNeRF \citep{li2022symmnerf} and VisionNeRF \citep{lin2023vision} used for $\chi$ and $\Phi$ in both stages and formed batches of 4 images during training, averaged our loss function over 256 rays, and sampled a total of $N_{s}=192$ points along each ray.
 
 \section{Experiments}
 \subsection{View synthesis on synthetic data - SRN ShapeNet}
-The first presented results were obtained on the ShapeNet dataset \cite{chang2015shapenet}, by focusing on the ShapeNet-SRN \cite{SRN} version. The \textit{Cars} and \textit{Chairs} classes respectively have 3514 and 6591 objects. Training is performed over the 50 different views per instance, while the testing set has 251 views per object, sampled on an Archimedean spiral. We adopted the same evaluation strategy all related works used and considered the view $64^{th}$ as the source image $\textbf{I}_{s}$. Results have been  averaged over the remaining 250 target views. 
+The first presented results were obtained on the ShapeNet dataset \citep{chang2015shapenet}, by focusing on the ShapeNet-SRN \citep{sitzmann2019scene} version. The \textit{Cars} and \textit{Chairs} classes respectively have 3514 and 6591 objects. Training is performed over the 50 different views per instance, while the testing set has 251 views per object, sampled on an Archimedean spiral. We adopted the same evaluation strategy all related works used and considered the view $64^{th}$ as the source image $\textbf{I}_{s}$. Results have been  averaged over the remaining 250 target views. 
 
-Our method reaches state-of-the-art performances according to Table \ref{table:comp_res} and even outperforms the heavier transformer-based architecture \cite{visionnerf} on almost all metrics. 
+Our method reaches state-of-the-art performances according to Table \ref{table:comp_res} and even outperforms the heavier transformer-based architecture \citep{lin2023vision} on almost all metrics. 
 
 \begin{table}[htp!]
 \caption{Comparisons against state of the art methods on the category specific \textit{Chairs} and \textit{Cars} classes from the ShapeNet-SRN dataset. Best results are highlighted in red, second ones in orange and third ones in yellow. }
@@ -192,14 +189,14 @@ Our method reaches state-of-the-art performances according to Table \ref{table:c
  Method & \multicolumn{3}{c}{Car} & \multicolumn{3}{c}{Chair} \\
  &  SSIM ($\uparrow$) & PSNR ($\uparrow$) & LPIPS ($\downarrow$) & SSIM ($\uparrow$) & PSNR ($\uparrow$)) & LPIPS ($\downarrow$)\\
 \hline
-SRN \cite{SRN}& \cellcolor{yellow!25}0.89 & 22.25 & 0.129 & 0.89 & 22.89 & 0.104\\
-PixelNeRF \cite{pixelnerf} & \cellcolor{orange!25}0.90 & 23.17 & 0.146 & \cellcolor{yellow!25}0.91 & 23.72 & 0.128\\
-FE-NVS \cite{guo2022fast} & \cellcolor{red!25}0.91 & 22.83 & \cellcolor{yellow!25}0.099 & \cellcolor{orange!25}0.92 & 23.21 & 0.077 \\
-GeNVS\cite{chan2023generative}& \cellcolor{yellow!25}0.89 & 20.7 & 0.104 & - & - & - \\
-ShaRF \cite{codenerf} & \cellcolor{orange!25}0.90 & 22.90 & - & \cellcolor{orange!25}0.92 & 23.37 & - \\
-CodeNeRF \cite{codenerf} & \cellcolor{red!25}0.91 & \cellcolor{orange!25}23.80 & - & 0.90 & 23.66 & -  \\
-SymmNeRF\footnotemark\cite{symmnerf}& \cellcolor{orange!25}0.90 & \cellcolor{yellow!25}23.10 & 0.110 & \cellcolor{yellow!25}0.91 & \cellcolor{yellow!25}24.14  & \cellcolor{orange!25}0.075 \\
-VisionNeRF \cite{visionnerf} & \cellcolor{red!25}0.91 & 22.88 & \cellcolor{orange!25}0.084 & \cellcolor{red!25}0.93 & \cellcolor{red!25}24.48  & \cellcolor{yellow!25}0.077 \\
+SRN \citep{sitzmann2019scene}& \cellcolor{yellow!25}0.89 & 22.25 & 0.129 & 0.89 & 22.89 & 0.104\\
+PixelNeRF \citep{yu2021pixelnerf} & \cellcolor{orange!25}0.90 & 23.17 & 0.146 & \cellcolor{yellow!25}0.91 & 23.72 & 0.128\\
+FE-NVS \citep{guo2022fast} & \cellcolor{red!25}0.91 & 22.83 & \cellcolor{yellow!25}0.099 & \cellcolor{orange!25}0.92 & 23.21 & 0.077 \\
+GeNVS\citep{chan2023genvs}& \cellcolor{yellow!25}0.89 & 20.7 & 0.104 & - & - & - \\
+ShaRF \citep{rematas2021sharf} & \cellcolor{orange!25}0.90 & 22.90 & - & \cellcolor{orange!25}0.92 & 23.37 & - \\
+CodeNeRF \citep{jang2021codenerf} & \cellcolor{red!25}0.91 & \cellcolor{orange!25}23.80 & - & 0.90 & 23.66 & -  \\
+SymmNeRF\footnotemark\citep{li2022symmnerf}& \cellcolor{orange!25}0.90 & \cellcolor{yellow!25}23.10 & 0.110 & \cellcolor{yellow!25}0.91 & \cellcolor{yellow!25}24.14  & \cellcolor{orange!25}0.075 \\
+VisionNeRF \citep{lin2023vision} & \cellcolor{red!25}0.91 & 22.88 & \cellcolor{orange!25}0.084 & \cellcolor{red!25}0.93 & \cellcolor{red!25}24.48  & \cellcolor{yellow!25}0.077 \\
 Ours &\cellcolor{red!25} 0.91 & \cellcolor{red!25}24.01 &\cellcolor{red!25} 0.082 &  \cellcolor{orange!25} 0.92 & \cellcolor{orange!25}24.30 & \cellcolor{red!25}0.072 \\
 
 \hline 
@@ -207,14 +204,14 @@ Ours &\cellcolor{red!25} 0.91 & \cellcolor{red!25}24.01 &\cellcolor{red!25} 0.08
 \end{adjustbox}
 %\end{center}
 \end{table}
-\footnotetext[3]{SymmNeRF\cite{symmnerf} results differ from the ones originally reported by authors since we had to retrain their architecture.}
+\footnotetext[3]{SymmNeRF\citep{li2022symmnerf} results differ from the ones originally reported by authors since we had to retrain their architecture.}
 
-As depicted in Figure \ref{fig:exp-srn-car}, EpiNeRF successfully gathers best aspects of both SymmNeRF \cite{symmnerf} and VisionNeRF \cite{visionnerf}. It renders novel views that are simultaneously sharp (eased by the ViT in VisionNeRF) and consistent from a symmetrical perspective on colour patterns (eased by the symmetry prior from SymmNeRF). In this regard, the red left rear door, that is not observed in the source view of the first row,  the right front light on the second one or the white trim in the last example are accurately synthesized by our architecture, contrary to concurrent works that either fail to synthesise sharp views (SymmNeRF) or grasp inherent symmetrical patterns (VisionNeRF). Having a higher-resolution feature volume \textbf{F} helps the radiance field generate sharper results, as shown in section \ref{subsec:visual_insights}. 
+As depicted in Figure \ref{fig:exp-srn-car}, EpiNeRF successfully gathers best aspects of both SymmNeRF \citep{li2022symmnerf} and VisionNeRF \citep{lin2023vision}. It renders novel views that are simultaneously sharp (eased by the ViT in VisionNeRF) and consistent from a symmetrical perspective on colour patterns (eased by the symmetry prior from SymmNeRF). In this regard, the red left rear door, that is not observed in the source view of the first row,  the right front light on the second one or the white trim in the last example are accurately synthesized by our architecture, contrary to concurrent works that either fail to synthesise sharp views (SymmNeRF) or grasp inherent symmetrical patterns (VisionNeRF). Having a higher-resolution feature volume \textbf{F} helps the radiance field generate sharper results, as shown in section \ref{subsec:visual_insights}. 
 
 \begin{figure}[htb!]
     \center
-  \includegraphics[height=5cm]{figures/exp-srn-cars.png}
-  \caption{Novel view synthesis on the category-specific \textit{Cars} class from ShapeNet. Our method allows to render sharper novel views than SymmNeRF \cite{symmnerf} while maintaining the symmetry that VisionNeRF \cite{visionnerf} fails to preserve.}
+  \includegraphics[height=5cm]{images/epinerf/exp-srn-cars.png}
+  \caption{Novel view synthesis on the category-specific \textit{Cars} class from ShapeNet. Our method allows to render sharper novel views than SymmNeRF \citep{li2022symmnerf} while maintaining the symmetry that VisionNeRF \citep{lin2023vision} fails to preserve.}
   \label{fig:exp-srn-car}
 \end{figure}
 
@@ -222,18 +219,18 @@ As depicted in Figure \ref{fig:exp-srn-car}, EpiNeRF successfully gathers best a
  
 \begin{figure}[htb!]
     \center
-  \includegraphics[height=6.1cm]{figures/exp-srn-chairs.png}
-  \caption{Novel view synthesis on the category-specific \textit{Chairs} class from ShapeNet. Tiny structures are not entirely rendered by \cite{visionnerf,symmnerf} whereas our method manages to reproduce complex back or armrest structures.}
+  \includegraphics[height=6.1cm]{images/epinerf/exp-srn-chairs.png}
+  \caption{Novel view synthesis on the category-specific \textit{Chairs} class from ShapeNet. Tiny structures are not entirely rendered by \citep{li2022symmnerf,lin2023vision} whereas our method manages to reproduce complex back or armrest structures.}
   \label{fig:exp-srn-chair}
 \end{figure}
 
 \subsection{View synthesis on real data}
-We evaluate our EpiNeRF architecture on real world images, by focusing on the Stanford Cars dataset \cite{krause20133d}. While raw images have been segmented using state-of-the art segmentation model SAM \cite{kirillov2023segment}, images have also been scaled and centred accordingly to match as closed as possible the ShapeNet-SRN image structure. If such a testing scenario is far from the one our architecture has been trained for, Figure \ref{fig:res_Stanfordcar} shows how EpiNeRF is able to produce sharper results than SymmNeRF \cite{symmnerf}, even without any reliable camera pose information.
+We evaluate our EpiNeRF architecture on real world images, by focusing on the Stanford Cars dataset \citep{krause20133d}. While raw images have been segmented using state-of-the art segmentation model SAM \citep{kirillov2023segment}, images have also been scaled and centred accordingly to match as closed as possible the ShapeNet-SRN image structure. If such a testing scenario is far from the one our architecture has been trained for, Figure \ref{fig:res_Stanfordcar} shows how EpiNeRF is able to produce sharper results than SymmNeRF \citep{li2022symmnerf}, even without any reliable camera pose information.
 
 \begin{figure}[htb!]
     \center
-  \includegraphics[height=6.cm]{figures/res_standford_cars.png}
-  \caption{Novel view synthesis on the few real \textit{Cars} from the Stanford dataset \cite{krause20133d}. Whereas even closed target viewpoint from the source view leads to fuzzy results, our method render sharper results than SymmNeRF \cite{symmnerf}. }
+  \includegraphics[height=6.cm]{images/epinerf/res_standford_cars.png}
+  \caption{Novel view synthesis on the few real \textit{Cars} from the Stanford dataset \citep{krause20133d}. Whereas even closed target viewpoint from the source view leads to fuzzy results, our method render sharper results than SymmNeRF \citep{li2022symmnerf}. }
   \label{fig:res_Stanfordcar}
 \end{figure}
 
@@ -255,7 +252,7 @@ Method & \multicolumn{3}{c}{Car} & \multicolumn{3}{c}{Chair} \\
 \hline
 baseline & 0.89 & 22.71 & 0.108 & 0.90 & 23.03 & 0.090 \\[1.5pt]
 \hline 
-+ Symmetry constraint \cite{symmnerf}  & \ 0.90 & 23.10  & 0.110 & 0.91 & 24.14 & 0.075 \\
++ Symmetry constraint \citep{li2022symmnerf}  & \ 0.90 & 23.10  & 0.110 & 0.91 & 24.14 & 0.075 \\
 + DeepLabV3 CNN encoder  & \cellcolor{red!25}{0.91} & 23.87 & 0.087 & \cellcolor{red!25}{0.92} & 24.23 & 0.073 \\
 + Epipolar Attention  & \cellcolor{red!25}0.91 & \cellcolor{red!25}24.01 &\cellcolor{red!25}0.082 & \cellcolor{red!25}0.92 &  \cellcolor{red!25}24.30 &\cellcolor{red!25}0.072 \\
 \end{tabular}
@@ -268,7 +265,7 @@ As shown on Table \ref{tab:ablation} and visually confirmed on Figure \ref{fig:a
 
 \begin{figure}[htp!]
     \center
-  \includegraphics[height=5cm]{figures/ablation-srn.png}
+  \includegraphics[height=5cm]{images/epinerf/ablation-srn.png}
   \caption{Visual influence of the different modules and constraints that were progressively applied to our architecture on ShapeNet-SRN dataset.}
   \label{fig:ablation}
 \end{figure}
@@ -284,13 +281,13 @@ Whereas primary purpose of NeRFeature is not to generate an entire feature map f
 \begin{figure*}[htb!]
   \centering
   \begin{subfigure}[t]{0.45\linewidth}
-    \includegraphics[height=3cm]{figures/nerfeature.png}
+    \includegraphics[height=3cm]{images/epinerf/nerfeature.png}
     \caption{\textit{Pseudo} ground truth features are generated through our CNN encoder-decoder $\chi$. Only the first channel are depicted shown for an illustrative purpose.}
     \label{fig:nerfeature_prediction}
   \end{subfigure}
   \hfill
   \begin{subfigure}[t]{0.51\linewidth}
-    \includegraphics[height=3.cm]{figures/feature_visuals.png}
+    \includegraphics[height=3.cm]{images/epinerf/feature_visuals.png}
     \caption{Feature map \textbf{F} produced by our encoder (\textit{center}, 128$\times$128 spatial res.) and by SymmNeRF (\textit{left}, 64$\times$64 spatial res.) given a source view (\textit{right}, 128$\times$128 spatial res.)}
     \label{fig:featuremap_comparison}
   \end{subfigure}
@@ -303,14 +300,14 @@ As observed, the overall pose of the target-aligned feature is properly inferred
 \begin{figure*}[htb!]
   \centering
   \begin{subfigure}[t]{0.48\linewidth}
-    \includegraphics[height=2.4cm]{figures/attention_illustration.png}
+    \includegraphics[height=2.4cm]{images/epinerf/attention_illustration.png}
     \caption{Toy feature attention distribution example along a ray. Two closed features that respectively lie in the source and target-aligned feature volume should exhibit a high cross-attention score.}
     \label{fig:attention-illustration}
   \end{subfigure}
   \hfill
   \begin{subfigure}[t]{0.48\linewidth}
     \center
-    \includegraphics[height=3.3cm]{figures/exp_epipolar_attention.png}
+    \includegraphics[height=3.3cm]{images/epinerf/exp_epipolar_attention.png}
     \caption{Epipolar attention activation in two different scenarios: While sampling empty area results in low attention scores across the whole epipolar line (top row), proper car areas sampling lead to tightened attention distribution (bottom row).}
     \label{fig:attention-practice}
   \end{subfigure}
