@@ -2,3 +2,12 @@ main.bbl
 main.blg
 .DS_Store
 .vscode
+main.idx
+main.log
+main.maf
+main.bcf
+main.aux
+main.mtc*
+main.out
+main.run.xml
+main.toc
