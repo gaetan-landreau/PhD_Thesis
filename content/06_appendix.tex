@@ -1,0 +1,77 @@
+\chapter{Appendix}
+\label{chapter:appendix}
+
+%\minitoc
+\chapterwithfigures{\nameref*{chapter:appendix}}
+%\chapterwithtables{\nameref*{chapter:introduction}}
+
+\ifthenelse{\boolean{skipAppendix}}{\endinput}{}
+
+
+\section{AdaptativeSR}
+
+\section{Details on Assets used in Chapter~\ref{chapter:epipolarnvs}}
+\label{sec:GradPaint assets}
+
+
+
+Table \ref{tab:linkschap3} (links) and Table \ref{tab:licenceschap3} (licences)
+list the assets we used in this work.
+
+\begin{table*}[h]
+\hspace{\sizeforappendix}
+\footnotesize
+\begin{tabular}{lll}
+\toprule
+\textbf{Asset Name} & \textbf{Link} \\
+\midrule
+% datasets 
+CelebA & https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html \\
+FFHQ &  https://github.com/NVlabs/ffhq-dataset \\
+Places2 &  http://places2.csail.mit.edu/download.html \\
+ImageNet & https://www.image-net.org \\
+COCO & https://cocodataset.org/ \\
+Guided Diffusion & https://github.com/openai/guided-diffusion \\
+Latent Diffusion & https://github.com/CompVis/latent-diffusion \\
+Stable Diffusion & https://github.com/CompVis/stable-diffusion \\
+LaMa & https://github.com/advimman/lama \\
+Palette & https://github.com/Janspiry/Palette-Image-to-Image-Diffusion-Models \\
+LPIPS &  https://github.com/richzhang/PerceptualSimilarity\\
+FID & https://github.com/mseitzer/pytorch-fid \\ % code and moels
+FFHQ pre-trained model & https://github.com/yandex-research/ddpm-segmentation \\ % just model
+RePaint & https://github.com/andreas128/RePaint\\
+MCG & https://github.com/HJ-harry/MCG\_diffusion\\
+\bottomrule
+\end{tabular}
+\caption{List of asset links.}
+\label{tab:linkschap3}
+\end{table*}
+
+
+\begin{table*}[h]
+\hspace{\sizeforappendix}
+\footnotesize
+\begin{tabular}{lll}
+\toprule
+\textbf{Asset Name} & \textbf{Asset type} & \textbf{License} \\
+\midrule
+CelebA & Images & CC BY-NC-SA 4.0 License \\
+FFHQ & Images &  https://github.com/NVlabs/ffhq-dataset/blob/master/LICENSE.txt \\
+Places2 &  Images & Creative Commons Attribution 4.0 International \\
+ImageNet & Images & https://www.image-net.org/download.php \\
+COCO & Images & Creative Commons Attribution 4.0 License \\
+Guided Diffusion & Code and Models & MIT License\\
+Latent Diffusion & Code and Models & MIT License \\
+Stable Diffusion & Code and Model & CreativeML Open RAIL-M\\
+LaMa & Code and Models & Apache License 2.0 \\
+Palette & Code and Models & MIT License \\
+LPIPS & Code and Models & BSD-2-Clause License \\
+FID & Code and Models & Apache-2.0 License \\
+FFHQ pre-trained model & Model & MIT License \\% just model
+RePaint & Code & CC BY-NC-SA 4.0 License\\
+MCG & Code & Apache License 2.0\\
+\bottomrule
+\end{tabular}
+\caption{List of asset licenses.}
+\label{tab:licenceschap3}
+\end{table*}
