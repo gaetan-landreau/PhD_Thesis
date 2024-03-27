@@ -14,12 +14,6 @@
 \bibliography{biblio.bib}
 
 
-
-
-
-
-
-
 \usepackage{ifthen}
 \usepackage{adjustbox}
 \usepackage{graphicx}
@@ -45,12 +39,6 @@
 \usepackage{bibentry}
 \usepackage{makecell}
 \usepackage{float}
-
-
-% \usepackage{hyperref}
-% \usepackage{xcolor}
-% \usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=black]{hyperref}
-
 
 
 % for an adaptable epigraph
@@ -133,8 +121,8 @@
 % By setting this to true, you skip the compiling of some chapters
 \setboolean{skipIntro}{false}
 \setboolean{skipRelated}{false}
-\setboolean{skipEpipolarNVS}{false}
-\setboolean{skipEpiNeRF}{false}
+\setboolean{skipEpipolarNVS}{true}
+\setboolean{skipEpiNeRF}{true}
 \setboolean{skipGauss}{true}
 \setboolean{skipConclusion}{true}
 \setboolean{skipAppendix}{true}
@@ -161,13 +149,8 @@
 
 
 \cleardoublepage
-\faketableofcontents
+%\faketableofcontents
 \input{content/00_accronyms.tex}
-
-
-% % \cleardoublepage
-% % \input{content/00_notations.tex}
-% % \cleardoublepage
 
 \mainmatter
 
@@ -200,39 +183,17 @@
 \cleardoublepage
 \let\leftmark=\oldleftmark
 
-
-
-% %\acresetall
-% %\input{02_shade.tex}
-% %\cleardoublepage
-% %\let\leftmark=\oldleftmark
-
-
-% uncomment for bib
-
 {
 	\backmatter
-	\renewcommand{\leftmark}{\spacedlowsmallcaps{\bibname}}
-	\renewcommand{\rightmark}{\spacedlowsmallcaps{\bibname}}
-
-	\refstepcounter{dummy}
-	\addtocontents{toc}{\protect\vspace{\beforebibskip}} % to have the bib a bit from the rest in the toc
-	\addcontentsline{toc}{chapter}{\tocEntry{\bibname}}
-	\printbibliography
+	\input{content/06_bibliography.tex}
 	\cleardoublepage
-}
+	}
+
 
 \appendix
 \acresetall
-\input{content/06_appendix.tex}
+\input{content/07_appendix.tex}
 \cleardoublepage
 \let\leftmark=\oldleftmark
-
-
-
-%\appendix
-%\acresetall
-%\input{10_shade.tex}
-%\cleardoublepage
 
 \end{document}
