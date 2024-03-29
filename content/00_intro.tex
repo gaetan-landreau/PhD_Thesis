@@ -7,7 +7,27 @@
 
 \ifthenelse{\boolean{skipIntro}}{\endinput}{}
 
-\emph{Seeing the unseen}.
+\emph{Perspicere} - \textit{to see through}. Behind the Perspective's etymology is hidden the notion of portraying our three-dimensional physical reality onto a two-dimensional plane. Such concept has been extensively studied for centuries, and found its oldest fundation in the geometry Euclide defined in his \textbf{Elements} (300BC). Florence, with its artists and architects, paved the way during Quattrocento in Italian Renaissance of linear perspective studies, to represent as accurately as possible surrounding world on paintings and drawings. Brunelleschi (1377-1446) is one the very first that studied how lines, shapes, objects change under different viewpoint observation, at changing angles. Defined with lines of sights that should converge on one or several vanishing points, linear perspective aims to simulate world objects appearance as a viewer's eye would see them.
+
+\begin{figure}[h!]
+      \begin{center}
+      \includegraphics[width=.8\textwidth]{images/introduction/perugino.jpg}
+      \end{center}
+      \caption{\textit{The Delivery of the Keys}, 1481–1482, Sistine Chapel, Rome by Perugino (1481–1482). This impressive $3.3m \times 5.5m$ fresco that both illustrated linear perspective and Brunelleschi's architectural style.}
+      \label{fig:intro_perugino}
+\end{figure}
+
+Even through artistic perspective studies were extremely well-tuned from a technical and mechanical standpoint \citep{simon2021jan}, perspective found new expressions in the scientific realm few centuries later, through the advent of photogrammetry. Notion speaks for itself when we once again at its grec ethymology, \textit{photo} - \ie light -, \textit{gramma} - \ie drawing, writing - and \textit{metron} - \ie measure -. Aimé Laussedat, a French astronomer, geodesist, surveyor and cartographer used the \textit{Hôtel des Invalides} in 1849 to observe, measure and thus try to reproduce physical spaces, lines and objects from multiples perspective views. Whereas photogrammetry therefore leverages parallax effect to extract depth and dimensions from our physical world with observed views, it was intensively used during mid last century for military purposes. The advent of aerial photography, enabled by recent advancements in aviation, allowed for the topographic mapping of entire countries during the Interwar period.
+
+\begin{figure}[h!]
+      \begin{center}
+      \includegraphics[width=.5\textwidth]{images/introduction/laussedat_phtograpmetrie.png}
+      \end{center}
+      \caption{Surveyed by the method of graphical intersections applied to perspectives recorded with the camera lucida. Survey of the Château de Vincennes by A. Laussedat, 1850}
+      \label{fig:intro_laussedat}
+\end{figure}
+
+Photogrammetry has finally been heavily studied through the prism of robotics and computer vision during 1980's, and is somehow today, the very earlier fundamental concept behind \ac{NVS}.
 
 \section{PhD Context}
 
@@ -16,8 +36,12 @@ Meero is a Software-as-a-Service french startup founded in 2014 that primarily a
 
 However, fundamental research in computer vision and its conterpart application in industries suffers from a massive gap that needs to be closed: most of academic papers in vision research deal with images that roughly size from $128\times128$ to $1024\times1024$, whereas images from any mobile device now has at least a 2K resolution (up to 4 to 6K for the latest DSLR camera). Even through such claim tends to thin out with latest fundation models and exploding \ac{GPU} compute capabilities, such an image resolution discrepancy prevent, during this thesis, to directly build an image-based \ac{AI} product in industy from an academic vision paper. This thesis somehow tried to filled this gap, mostly by investigating generalizable single-image novel view synthesis architecture, that could thus be non-restricted to a single scene. 
 
-\subsection{Novel View Synthesis}
 \subsection{3D reconstruction}
+ \ac{NVS} is inherently intertwined with 3D reconstruction, as synthesis of novel views was, de facto, allowed when the complete 3D representation of the scene was available, using photogrammetry or Structure-From-X techniques (where X could stands for \textit{Texture, Shading, Silhouette} etc). Using a bunch of different procedures, such as view correlation, triangulation or camera pose estimation, static scenes can be reconstructed in 3D through a set of RGB 3D points from unordered images since a couple of decades. Extracting a textured mesh from it 
+
+\subsection{Novel View Synthesis}
+
+
 \section{Contributions}
 Aiming to perform novel viewpoint synthesis from a single-image is an extremely ill posed-problem since too many details, structures or texture are unobserved on the provided source view. Core problem that thus inherantly rises from the later observation is to find ways, such as efficient pose encoding, structural constraints that bring as many as possible prior information to the \ac{NN}. 
 
