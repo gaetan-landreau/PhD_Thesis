@@ -6,3 +6,32 @@
 \ifthenelse{\boolean{skipGauss}}{\endinput}{}
 
 \section{Introduction}
+This final section extends the latest two sections that were mostly focused toward a research academic perspective. Core motivation rather lies here on the desire to apply \ac{NVS} latest advances on an industrial project, where processed images resolution are at least $10\times$ higher than ShapeNet-SRN \citep{chang2015shapenet,sitzmann2019scene} ones ($\sim$ 1-2K against $128\times128$). \ac{NeRF} have benefited over the latest few years from massive improvements against several directions; training time, camera pose requirements, inference speed, drastic model weight reduction \textit{etc}. 
+However, \ac{NeRF}-based methods suffers from an intrinsic computational bottleneck at inference time. It requires to query the \ac{NeRF} roughly 500 millions times to generate a squared $2K\times2K$ image. As a direct consequence, one of the most acknowledged state-of-the-art method, termed Mip-NeRF360 \citep{barron2022mip}, is only able to render at 0.071 \ac{FPS} a 1080p image. It would therefore be necessary to deploy a lot of \ac{GPU} resources and engineering refactorization to properly parallelize the source code in order to synthesize novel views at acceptable speed (under a second would be the bare minimum for an industrial application). 
+
+
+We thus work in this section with a different set of constraints. First concerns the generalizable property we kept in the two previous sections. We do not anymore aim to build or rely on an algorithm that can synthesize any viewpoint from any image belonging to a specific class. We thus rather want to leverage on \textit{per-scene} algorithm, that would require a novel training as soon as we work with a novel scene. Furthermore and as mentioned earlier, images we are now working with are closer to what clients could sent to any \ac{AI} SaS company, both regarding resolution and content. 
+
+Core idea is rather to leverage on the very latest advances in neural rendering, mostly on \ac{GS} ones. The \ac{NVS} paradigm we dealt with until now is in consequence slightly changed. View synthesis is not anymore infered given a source image and a camera transformation since \ac{GS} reconstruct the whole 3D scene. Render a novel view now at a specific viewpoint only require the corresponding camera pose. 
+
+
+
+
+
+
+
+
+
+\section{Related work}
+\section{Method}
+\subsection{Camera path stabilization}
+\subsection{$360\degree$ with homography}
+\subsection{$360\degree$ with Gaussian Splatting}
+\section{Experiments}
+\subsection{Rendering at non-training locations}
+
+\subsection{Ablations studies}
+\paragraph{Number of views influence}
+\paragraph{Depth loss supervision}
+\paragraph{View-dependancy effect}
+\section{Conclusion}
