@@ -48,13 +48,22 @@ marginparsep=-1cm,
 marginparwidth=3cm,
 }
 
+
+
 % tables
 \usepackage{tabularx}
 \newcommand{\tableheadline}[1]{\multicolumn{1}{c}{\spacedlowsmallcaps{#1}}}
 \usepackage{adjustbox}
 
 % algorithms
-\usepackage[chapter]{algorithm}
+%\usepackage[chapter]{algorithm}
+\usepackage{xcolor}
+\usepackage[linesnumbered,ruled,vlined,algo2e]{algorithm2e}
+\usepackage {algpseudocode}
+\usepackage{algorithmicx}
+\usepackage{algcompatible}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
 
 % notation
 \usepackage{template/notation}
@@ -65,6 +74,11 @@ marginparwidth=3cm,
 % indexing
 \usepackage{makeidx}
 \makeindex
+
+% .gif animation 
+\usepackage{animate}
+\usepackage{nicefrac}
+
 
 % graphics, figures, captions
 %\usepackage{graphicx}
