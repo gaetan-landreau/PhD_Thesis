@@ -21,9 +21,40 @@ Finally, Chapter \ref{chapter:gausssplat} has been entirely devoted to the \ac{N
 
 On top of these contributions, we also introduce in Appendix \ref{chapter:appendix} our very first work, called AdaptativeSR \citep{landreau2022adaptativesr}. There is no direct relationship with the \ac{NVS} but rather with topological considerations in low-resolution 3D meshe structure. Idea was to leverage on the very first differentiable rasterizers that emerged in 2020 \cite{liu2019soft} (before this PhD started) to prune faces of a genus-0 object mesh. By solely relying on 2D binary rendered silhouette mask of such a 3D object, we proposed an effective yet imperfect algorithm to adapt mesh topology. 
 
-\section{3D and IA in 2024}
-\subsection{Open-source and environmental issue}
-\subsection{Fundation models in 3D}
-\subsection{Trends and application in 3D}
+\section{IA challenges in 2024}
+
+This section embrasses the most recent issues and trends 3D related \ac{IA} landscape is currently living. This section is not technical but aims to span across the main challenges the scientific community - from academic researchers to tech companies -, but also individuals, will have to face in the months and years to come. 
+
+\subsection{Open-source}
+We can reliably claim that \ac{IA} has been bring into world hands with the release by OpenIA in December 2022 of ChatGPT, an \ac{LLM} based conversational chabot. 
+
+Pour autant, la technologie derrière les LLM n'était pas intégralement nouvelle, et OpenIA avait pour habitude de publier régulièrement des notes techniques de ces recherches, ainsi que le code source associé en accès libre. OpenIA était ainsi extrèmement permissive quant à l'usage de GPT-2 \citep{radford2019language}, version antérieure de 2018 à ChatGPT. Une telle époque est désormais révolu chez OpenAI, qui ne publie en open source que très peu de ses produits (à l'image de Whisper, general-purpose speech recognition model). Avec une rapidité déconcertante, un véritable chisme à eu lieu dans l'industrie de l'IA, mettant dos à dos les entreprises vantant et défendant ardement l'open source et celle étant convaincu de la nécessité de garder sa technology pour soit. Des entreprises, qui sont pour là plus part davantage de très jeunes startup,  telles que Mistral IA, HuggingFace ou StableDiffusion,  s'opposent désormais à des entreprises qui vendent et distribuent un produit dont la technologie est entièrement fermée au monde académique, à l'image de d'OpenIA, ou d'Antropic ou de MidJourney. 
+
+A titre personnel, je pense intimmement que la recherche en IA est désormais supporté par une communauté si brillante techniquement et si motivée intellectuellement par les challenges à venir, que les entreprises faisant le choix déliberé de développer uniquement en interne leur produit IA se feront, à très court terme, rattrapé et dépassé. La Figure \ref{fig:conclusion-openclose} illustre d'ailleurs en un sens ce propos, à minima pour le domaine des LLMs. 
+ 
+\begin{figure}[htb!]
+    \center
+  \includegraphics[width=\linewidth]{images/conclusion/open-close.jpeg}
+  \caption{\textbf{LLMs ELO score based on human ratings.} Such graphs is built on a regular monthly basis thanks to \citep{chiang2024chatbot} work. It seems that open models now has a 6 to 10-month lag, againt more than years when GPT-4 was released.}
+  \label{fig:conclusion-openclose}
+\end{figure}
+
+Bien que moins marqué que les LLMs par cette tendance, le monde de la 3D voit lui aussi son lot d'entrepises défendant l'un de ces deux modèles. StabilityIA, déjà plus que largement connu et reputé dans le monde de l'image en IA grâce à ces modèles de diffusion \citep{esser2024scaling}, a ainsi très récement rendu public un nombre important de modèles de reconstruction 3D \cite{TripoSR2024 ,voleti2024sv3d} à partir d'une image. 
+
+
+\subsection{Fundation models and environmental issue}
+Cependant, bien que qu'un nombre croissant de modèles soit librement accessible, les ressources GPUs requises pour pouvoir entrainer et ou utiliser ces modèles, aux dizaines voir centaines milliards de paramètres, demeurent très souvent énormes, voire gargantuesques. 
+
+
+Factorial Funds estime ainsi qu'il a fallu, pour entrainer le dernier modèle de texte to vidéo d'OpenIA, nommé SoRA, entre 4.2k et 10K H100 GPUs sur un mois entier. A raison d'une consomation de 700W par GPUs, l'entrainement de SoRA aura donc consommé autant d'électrcité qu'un francais moyen en 12 ans. Toujours selon le même rapport, extrement documenté et accessible ici, il est estimé qu'un seul H100 sera capable de générer 5 minutes de vidéo par heure. Si une telle technologies vise dans l'année à venir à être accessible publiquement, Factorial Funds estime qu'il faudra près de 720k H100 à OpenIA pour répondre à une demande mondiale, en assumant que 50\% des vidéos postés sur TikTok et 15\% des vidéos sur Youtube seront gérés via un tel modèle.
+
+Et la tendance n'est pas, de la part d'NVIDIA qui a le monopole sur la production des GPUs, à un développement de GPUs frugale d'un point de vue de la consomation électrique. L'actuelle finallité est davantage tournée vers le nombres d'opérations que de telles machines peuvent faire à la seconde: la consomation électrique de la prochaine génération d'architecture Blackwell d'NVIDIA, avec les B100s semble être donnée à 1000W. 
+
+Toutes les modalités, du texte,à l'audio, en passant par l'image, la vidéo et donc la 3D auront leur modèle de fondation. La 3D est peut être désormais le seul domaine qui n'a pas encore son modèle de fondation à l'heure où ces lignes sont écrites, mais il ne s'agit là que d'une question de temps. Sam Altman affirme d'ailleurs sur X, en Avril 2024, "movies are going to become video games and video games are going to become something unimaginably better". 
+
+\subsection{Ethics & Harmness}
+
 \section{Perspectives and further work}
+\subsection{Trends and application in 3D}
+\subsection{Further work}
 
