@@ -110,10 +110,10 @@ Regarding the 3D covariance, it can be expressed in 2D as:
 
 where $J = \partial \mu' / \partial \mu$ is the Jacobian of the mean projection formula. Additional information regarding this latest equation can be found in Appendix \ref{appendix:cov}. 
 
-\noindent \textbf{Adaptative Density Control} 
+\noindent \textbf{Adaptative Density Control (ADC)} 
 As the original \ac{SFM} point cloud can be extremely sparse, authors from \cite{kerbl20233d} implement both a densification and pruning strategy during training. The pruning is quite simple yet effective: any 3D gaussian that has an opacity $\alpha$ below a fixed threshold $\epsilon_{\alpha}$ during training is removed from $\mathcal{G}$. 
 
-The densification stategy is not as immediate insofar as it required to both address under-reconstructed areas (where an insufficient number of gaussians are present) and over-reconstructed areas (where gaussians are too large) of the scene, as depicted on Figure \ref{fig:gs-densification}
+The densification stategy is not as immediate insofar as it required to both address under-reconstructed areas (where an insufficient number of gaussians are present) and over-reconstructed areas (where gaussians are too large) of the scene, as depicted on Figure \ref{fig:gs-densification}. 
 
 \begin{figure*}[htb!]
   \center
@@ -237,7 +237,7 @@ Once such transformation has been applied to the entire scene, the $360\degree$ 
 Car cropping is one the main limitation of this first solution and it cannot be triavially adressed. Besides, CarCutter clients often lack room to back up further when they shoot a car. There are therefore two causes that might lead to car cropping as any input view might also partially depict the car. Such a pure geometrical-based solution cannot fake or generate cars missing parts. 
 
 \subsection{$360\degree$ with Gaussian Splatting}
-
+\label{subsec:gs-vanilla_gs}
 We investigate in this section the seminal work from \citep{kerbl20233d} on our scene. From a number of input views perspective, our scene might be considered as sparsed: research datasets used to train and test \ac{GS} often have hundreads of photographs. Since our scene is made of only 36 views, we used all of them to train the \ac{GS} model. 
 
 We first present on the Figure \ref{fig:gs-view3} the rendering of the view indexed \textit{0003}, that was thus in the training set. As the entire 3D scene structure has been learned and is explicitly stored as a gaussian point cloud, one can render it at any locations and synthesize the whole car. 
@@ -289,6 +289,8 @@ The stabilization of the scene on Figure \ref{fig:gs-floaters} induced a small s
 
 
 \section{Experiments}
+\ref{sec:gs-experiment}
+
 \subsection{View-dependancy effect}
 
 \subsection{Visual Hull}
@@ -370,8 +372,8 @@ One naive yet effective solution is thus to merge the two original point cloud w
   %\end{center}
   \end{table}
 
+\subsection{Revisiting the ADC strategy}
 
-  
-\subsection{Depth loss supervision}
+As \citep{zhang2024pixel}
 
 \section{Conclusion}

@@ -7,5 +7,23 @@
 
 \ifthenelse{\boolean{skipConclusion}}{\endinput}{}
 
+This thesis primarely focused on the novel view synthesis issue, mostly with the highly constrained single-view scenario. We skim through in this section over our core contributions, before drawing up  the current 2024 landscape in \ac{IA} and 3D. The last section of this manuscript will be devoted to the perspectives and further work this PhD thesis might lead to. 
 
 \section{Contributions}
+
+This manuscript has adressed in a large extend the single-image \ac{NVS} issue. We built in our first two contributions around latest deep learning architectures to synthesize a novel viewpoint of a static scene from a single source posed image. Our latest project has an industrial primary aim, where novel views are rendered from a scene that was explicitly reconstructed in 3D as a gaussian point cloud.
+
+We started this manuscript by presenting in Chapter \ref{chapter:epipolarnvs} our epipolarNVS architecture. Our main motivation through this work was to propose an innovative way to encode camera pose information in an image-to-image \ac{CNN} for \ac{NVS}. Whereas most of prior work often discretized \citep{kim2020novel} or encoded camera pose information into a low dimensional signal \citep{sun2018multiview}, we rather exploited the epipolar constraint to encode such prior signal. Through a vanilla grid sampling strategy on the source view, we project epipolar lines on a blank RGB image, that was been fed alongside the source image to pose-condition the network. 
+
+We then investigated in Chapter \ref{chapter:epinerf} how epipolar constraints could be bring into a generalizable \ac{NeRF} architecture for single-image \ac{NVS}. Based on \textit{source-aligned} dense feature volume produced from a CNN-encoder, we trained a novel \ac{NeRF}-architecture, termed NeRFeature \ref{subsec:epinerf/method/nerfeature} to produce \textit{target-aligned} features. These \textit{source} and \textit{target-aligned} feature are finally used through an epipolar constraint in a light attention mechanism. We extensively shown in the devoted Experiments section \ref{subsec:epinerf/experiments} how our three-stage training architecture might help generalizable \ac{NeRF}s to better perfrom on single-image \ac{NVS} task.  
+
+Finally, Chapter \ref{chapter:gausssplat} has been entirely devoted to the \ac{NVS} solution we started investigated with CarCutter by Meero few months ago. The camera spin stabilization algorithm allows to render from a 3D \ac{GS} reconstructed scene novel viewpoints which were initially uncomplete and cropped (subsection \ref{subsec:gs-vanilla_gs}). We presented a bunch of improvements to go beyond this first reconstruction in Experiments \ref{sec:gs-experiment}. However, 3D \ac{GS}-based scenes remain prone to floaters artifact when they are rendered at non-training locations. We will push in that direction in a close future to develop a floater removal algorithm. While results are still unperfect for an industrial application, research and open-source projects around \ac{GS} \citep{kerbl20233d} are tremendously prolific and move at a very steady pace for 10 months now \citep{luiten2023dynamic,yang2024gaussianobject,wewer24latentsplat}. 
+
+On top of these contributions, we also introduce in Appendix \ref{chapter:appendix} our very first work, called AdaptativeSR \citep{landreau2022adaptativesr}. There is no direct relationship with the \ac{NVS} but rather with topological considerations in low-resolution 3D meshe structure. Idea was to leverage on the very first differentiable rasterizers that emerged in 2020 \cite{liu2019soft} (before this PhD started) to prune faces of a genus-0 object mesh. By solely relying on 2D binary rendered silhouette mask of such a 3D object, we proposed an effective yet imperfect algorithm to adapt mesh topology. 
+
+\section{3D and IA in 2024}
+\subsection{Open-source and environmental issue}
+\subsection{Fundation models in 3D}
+\subsection{Trends and application in 3D}
+\section{Perspectives and further work}
+

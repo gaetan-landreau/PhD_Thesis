@@ -9,8 +9,7 @@
 
 
 \section{Introduction}
-
-
+\label{sec:epinerf/intro}
 Few-shot NVS presents a challenging task in computer vision, wherein the objective is to generate an image from an unobserved viewpoint using only a limited number of source images and their corresponding camera pose information. The present work addresses an even more intricate scenario, which exclusively relies on a unique source image. The problem is inherently ill-posed as a single source image may not provide enough visual clues to generate a novel viewpoint. Handling unforeseen elements as well as occlusions becomes particularly challenging in this scenario. To effectively tackle these challenges, leveraging 3D priors \citep{saito2019pifu,johari2022geonerf} is fundamental since it enables deep architectures to acquire a primary understanding of the underlying 3D scene structure. 
 
 Recent advances in neural rendering \citep{tewari2022advances} significantly drive latest works in the few shot NVS issue. While original neural radiance field (NeRF) \citep{mildenhall2020nerf} allows to represent a scene through a learned overfitted 5D function, it does not have any generalization abilities. Latest contributions \citep{yu2021pixelnerf,li2022symmnerf,lin2023vision} designed low-resolution 2D feature \textbf{F} conditioning to tackle such a limitation, mostly by leveraging on an image encoder. Produced feature volume is sampled at training and testing time through pixel-aligned bilinear interpolation to \textit{locally} condition the radiance field. However, the deep feature is aligned with the source view: occlusions and unobserved parts therefore lead to misaligned and coarsely-local feature sampling on \textbf{F}, producing non-optimal conditioning. 
@@ -24,12 +23,13 @@ Recent advances in neural rendering \citep{tewari2022advances} significantly dri
 
 Our work therefore try to address such limitations by producing target-aligned features from a feature radiance field, called NeRFeature. Associated training is supported through a light feature distillation procedure, by leveraging on a CNN encoder-decoder as teacher network. Target oriented feature (from the NeRFeature student radiance field) is then involved (with its source-aligned counterpart) in an epipolar-based attention mechanism: it shrinks the weights sampling distribution around regions where source and target features match, allowing better sampling during neural rendering. Corresponding results, both in RGB and feature space can is illustrated on Figure \ref{fig:res_car_intro}. We conducted extensive ex\--periments and ablations studies to motivate our claims, whereas our architecture outperforms most of current state-of-the art methods on the ShapeNet dataset \citep{chang2015shapenet}. Our contributions are threefold and can be summarised through: 
 \begin{enumerate}
-   \item A learned feature radiance field, called NeRFeature. Given a source-aligned feature and a camera transformation, NeRFeature aims to infer the correspond\--ing target-aligned deep feature trough a light feature distillation procedure, that do not involve any heavy foundation models (section \ref{subsec:nerfeature}). 
-    \item A simple yet effective epipolar-based attention mechanism that relies on source and target aligned features and which adjust the weights sampling distribution during volume rendering (section \ref{subsec:epipolar_att}). 
+   \item A learned feature radiance field, called NeRFeature. Given a source-aligned feature and a camera transformation, NeRFeature aims to infer the correspond\--ing target-aligned deep feature trough a light feature distillation procedure, that do not involve any heavy foundation models (section \ref{subsec:epinerf/method/nerfeature}). 
+    \item A simple yet effective epipolar-based attention mechanism that relies on source and target aligned features and which adjust the weights sampling distribution during volume rendering (section \ref{subsec:epinerf/method/epipolar_att}). 
     \item A novel generalizable NeRF architecture for single-image NVS, EpiNeRF, \textit{locally} conditioned on its input with a CNN as well as \textit{globally} conditioned on its weights through a Hypernetwork (section \ref{subsec:epinerf}).  
 \end{enumerate}
 
 \section{Related work}
+\label{sec:epinerf/rw}
 
 \noindent\textbf{Single-image novel view synthesis.} Novel view synthesis aims to render an image of a scene from a an unobserved viewpoint, given a set of posed images, i.e. images and the associated camera poses (3D position and orientation). NVS has been widely studied over the last few decades from both graphics and computer vision perspectives. Early pioneer works \citep{chen93view,levoy96light,fitzgibbon2005image} mostly relied on graphics and multi-view geometry concepts, such as light field, warping or blending operations to synthesise novel view. However, synthesising a viewpoint from a different location based on a single image is an ill-posed task. Occluded parts cannot be easily recovered in this scenario, as the 3D scene cannot be triangulated. The recent breakthrough of deep networks has opened the door for learning-based methods. While fully convolutional-based networks first appeared in the devoted literature \citep{zhou2016view,sun2018multi,kim2020novel,hou2021novel,guo2022fast,landreau2022epipolarnvs}, the emergence of neural radiance fields \citep{mildenhall2020nerf} and neural rendering \citep{tewari2022advances} highly influenced the way single-view novel view synthesis architectures \citep{yu2021pixelnerf,li2022symmnerf,lin2023vision} are built. Introducing explicit 3D concepts (regarding camera pose, implicit or neural 3D reasoning etc) within architectures significantly help deep neural networks to better address such 3D vision task relying on implicit representations. Latest research directions in single-image NVS pushes toward extremely large deep networks, such as image-conditioned diffusion models\citep{chen2023single,xiong2023light,chan2023genvs,yu2023long}. Note that, recent advances in large 3D reconstruction \citep{hong2023lrm} use even bigger models, that are able to explicitly grasp the whole 3D structure of an object from a single view \citep{liu2023zero,shi2023zero123++,liu2024one,liu2023one2345++,zou2023triplane}. However, these diffusion-based architectures remain complex to train and have poor speed inference performances.  
 
@@ -54,7 +54,7 @@ Such a \textit{local} -input based- conditioning is now commonly adopted in devo
 \noindent\textbf{Feature distillation in NeRF.} A radiance field can be extended to output additional features of interest, and thus go beyond RGB space, as soon as a supervisory signal exists to train such an architecture. Several approaches can thus be derived from the original neural radiance fields seminal work, including BRDF-based methods \citep{boss2021nerd,verbin2022ref}, deep latent feature-based methods \citep{kobayashi2022decomposing,ye2023featurenerf,chan2023genvs}, or even methods that are parametrized to handle dynamic scenes \citep{pumarola2021d,yan2023nerf}. From a feature distillation perspective, research from \citep{hinton2015distilling} paved the way, mostly to tackle both knowledge transfer and model compression issues. Few works already attempted to distill feature from a 2D model (such as a CNN or a ViT) into 3D through the use of neural radiance fields \citep{kobayashi2022decomposing, tschernezki2022neural}. \citep{ye2023featurenerf} is the closest work, regarding our first contribution consisting in learning feature radiance field in the spirit of a teacher-student framework. However, the authors in \citep{ye2023featurenerf} distilled learned feature from a 2D foundation model \citep{oquab2023dinov2} while we propose a lighter feature distillation procedure. 
 
 \section{Method}
-
+\label{sec:epinerf/method}
 We present an overview of our architecture on Figure \ref{fig:overview}. Following subsections are devoted to the different sub-modules EpiNeRF has and how they have been built.
 \begin{figure*}[htb!]
     \center
@@ -63,7 +63,7 @@ We present an overview of our architecture on Figure \ref{fig:overview}. Followi
   \label{fig:overview}
 \end{figure*}
 \subsection{NeRFeature: learn target-aligned features}
-\label{subsec:nerfeature}
+\label{subsec:epinerf/method/nerfeature}
 
 While feature volumes produced by any 2D models (CNN or ViT) are defacto aligned with the RGB image they have been fed with (i.e the source image $I_s$), we propose to distil and learn such feature space into 3D through a neural feature radiance field, termed NeRFeature $\Psi$. 
 
@@ -92,11 +92,10 @@ while the target-aligned feature $\mathbf{f}_{t}$ is obtained through the vanill
 
 with $\delta_{i}=\mathbf{x}^{(i+1)}-\mathbf{x}^{(i)}$  the distance between two consecutive samples and $T_{\rho}(i) = \exp\left(-\sum_{j=1}^{i}\rho^{(j)}\delta_{j}\right)$ the accumulated transmittance along \textbf{r}.
 
- Such a learned feature field is finally queried (see Section \ref{subsec:epipolar_att}) during the joint fine-tuning (Figure \ref{fig:overview} - bottom) phase to render target-aligned features, that are involved in an epipolar-based attention mechanism. 
+ Such a learned feature field is finally queried (see Section \ref{subsec:epinerf/method/epipolar_att}) during the joint fine-tuning (Figure \ref{fig:overview} - bottom) phase to render target-aligned features, that are involved in an epipolar-based attention mechanism. 
  
 \subsection{Feature-based epipolar attention}
-\label{subsec:epipolar_att}
-
+\label{subsec:epinerf/method/epipolar_att}
 As soon as deep feature from $\chi$ has been distilled into the NeRFeature $\Psi$, target-aligned features can be synthesized by solely requiring the source-aligned feature and the corresponding camera relative transformation. A cross-attention distribution \citep{vaswani2017attention} can therefore be computed with such source-aligned features, that all lie on the epipolar line defined by the sampled pixel on the target view. In this way, for any 3D point $\mathbf{x}^{(i)}$, a cross-attention score is obtained from: 
 
 \begin{equation}
@@ -174,6 +173,7 @@ The second fine tuning training stage is trained in a similar way to the first o
 We followed the training strategy that SymmNeRF \citep{li2022symmnerf} and VisionNeRF \citep{lin2023vision} used for $\chi$ and $\Phi$ in both stages and formed batches of 4 images during training, averaged our loss function over 256 rays, and sampled a total of $N_{s}=192$ points along each ray.
 
 \section{Experiments}
+\label{subsec:epinerf/experiments}
 \subsection{View synthesis on synthetic data - SRN ShapeNet}
 The first presented results were obtained on the ShapeNet dataset \citep{chang2015shapenet}, by focusing on the ShapeNet-SRN \citep{sitzmann2019scene} version. The \textit{Cars} and \textit{Chairs} classes respectively have 3514 and 6591 objects. Training is performed over the 50 different views per instance, while the testing set has 251 views per object, sampled on an Archimedean spiral. We adopted the same evaluation strategy all related works used and considered the view $64^{th}$ as the source image $\textbf{I}_{s}$. Results have been  averaged over the remaining 250 target views. 
 
