@@ -71,7 +71,31 @@ We present below the key steps that were defined in the original \ac{GS} seminal
     \item A color $c$, represented using \ac{SH} coefficients. Additional information regarding \ac{SH} theory and construction can be found in the Appendix \ref{appendix:gs-sh}. 
     \item An opacity/transparency $\alpha$ value. 
 \end{itemize}
-These attributes that are going to be learned, for all gaussians in  $\mathcal{G}$ during training. While mean, color and opacity can be optimized without any constraints with gradient-descent based algorithm, $\Sigma$ has to remain semi-definite positive \footnote{\textit{i.e} $ \forall a \in \mathbb{R}^{3}: a^{T}\Sigma a \geq 0$} during training to represent a meaningful 3D coviance matrix. As holding this constraint during the optimization would be to complex, $\Sigma$ is factorized (as an eigendecomposition) in the world coordinate system via with a rotation $R$ (analytically expressed with 4 quaternions) and a scaling matrix $S$: 
+
+These attributes that are going to be learned, for all gaussians in  $\mathcal{G}$ during training. The table \ref{tab:gauss-param} summarizes the total number of parameter that need be be optimized for each gaussian $g$. 
+
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{lccc}
+  \hline
+  Parameter & Symbol & Size & Note \\
+  \hline
+  Position (mean) & $\mu$ & 3 & 3D vector $(x, y, z)$ \\
+  Scale & $s$ & 3 & 3D vector $(x, y, z)$ \\
+  Rotation (quaternion) & $q$ & 4 & scalar + 3D vector $(i, j, k)$ \\
+  Opacity & $o$ & 1 & scalar \\
+  SH coefficients & $sh$ & 48 & 4 bands of SH; $(1+3+5+7)\times3$ \\
+  \hline
+  Total (per Gaussian) & & 59 & \\
+  \hline
+  \end{tabular}
+  \caption{Your caption here.}
+  \label{table:your_label}
+  \end{table}
+  
+
+While mean, color and opacity can be optimized without any constraints with gradient-descent based algorithm, $\Sigma$ has to remain semi-definite positive \footnote{\textit{i.e} $ \forall a \in \mathbb{R}^{3}: a^{T}\Sigma a \geq 0$} during training to represent a meaningful 3D coviance matrix. As holding this constraint during the optimization would be to complex, $\Sigma$ is factorized (as an eigendecomposition) in the world coordinate system via with a rotation $R$ (analytically expressed with 4 quaternions) and a scaling matrix $S$: 
 
 \begin{equation}
     \Sigma = RSS^{T}R^{T}
@@ -102,13 +126,13 @@ and the 2D mean $\mu' = \begin{bmatrix}
 \begin{equation}
   \mu' = K(W\mu/(W\mu_{z}))
 \end{equation}
-Regarding the 3D covariance, it can be expressed in 2D as:
+Regarding the 3D covariance, its splatted 2D version is expressed as:
 
 \begin{equation}
   \Sigma'= JW\Sigma W^{T}J^{T}
 \end{equation}
 
-where $J = \partial \mu' / \partial \mu$ is the Jacobian of the mean projection formula. Additional information regarding this latest equation can be found in Appendix \ref{appendix:cov}. 
+where $J = \partial \mu' / \partial \mu$ is the Jacobian of the mean projection formula (\textit{i.e} the affine approximation of the 3D-2D projection). Additional information regarding this latest equation can be found in Appendix \ref{appendix:cov}. 
 
 \noindent \textbf{Adaptative Density Control (ADC)} 
 As the original \ac{SFM} point cloud can be extremely sparse, authors from \cite{kerbl20233d} implement both a densification and pruning strategy during training. The pruning is quite simple yet effective: any 3D gaussian that has an opacity $\alpha$ below a fixed threshold $\epsilon_{\alpha}$ during training is removed from $\mathcal{G}$. 
@@ -121,6 +145,8 @@ The densification stategy is not as immediate insofar as it required to both add
 \caption{\textbf{Densification Strategy.} By addressing both under and over-reconstructed areas, the densification strategy always increases the total number of gaussians but kept its associated total volume  constant in the \textit{split} stategy (contrary to the \textit{clone} one).}
 \label{fig:gs-densification}
 \end{figure*}
+
+
 
 \section{Related Work}
 

@@ -7,6 +7,226 @@
 
 \ifthenelse{\boolean{skipAppendix}}{\endinput}{}
 
+\section{EpipolarNVS}
+\subsection{Additional results}
+
+Additional qualitative results from EpipolarNVS (Chapter \ref{chapter:epipolarnvs}) on the different datasets we worked with are presented in this section. We present for each dataset 8 different situations or object instances. 
+
+\begin{figure}[htp!]
+    \begin{center}
+    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_Car.jpg}
+    \end{center}
+     \caption{Visual results from the test ShapeNet \cite{Shapenet} \textit{Car} class. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of \cite{NVS_skip}, our prediction and the target image $I_t$.}     \label{fig:add_visCar}
+\end{figure}
+
+\begin{figure}[htp!]
+    \begin{center}
+    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_Chair.jpg}
+    \end{center}
+     \caption{Visual results from the test ShapeNet \cite{Shapenet} \textit{Chair} class. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of \cite{NVS_skip}, our prediction and the target image $I_t$.}
+     \label{fig:add_visChair}
+\end{figure}
+
+\begin{figure}[htp!]
+    \begin{center}
+    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_Synthia.jpg}
+    \end{center}
+     \caption{Visual results from the Synthia \cite{Synthia} test set. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of \cite{NVS_skip}, our prediction and the target image $I_t$.}
+     \label{fig:add_visSynthia}
+\end{figure}
+
+\begin{figure}[htp!]
+    \begin{center}
+    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_KITTI.jpg}
+    \end{center}
+     \caption{Visual results from the KITTI \cite{KITTI} test set. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of \cite{NVS_skip}, our prediction and the target image $I_t$.}
+     \label{fig:add_visKITTI}
+\end{figure}
+
+%%%%%%%%%%%%%
+%% EpiNeRF %%
+%%%%%%%%%%%%%
+\section{EpiNeRF}
+Pseudo training code and additional rendered novel views associated to the Chapter \ref{chapter:epinerf} are presented in this section. 
+
+\subsection{Three stage trainings - Pseudo code}
+Pseudo codes related to our entire three-stage training pipeline is provided here. Associated \textit{Python} source code is also provided with this supplementary material. Code presented in Algorithm \ref{alg:fourth} is mostly related to \code{model/render\_rays.py} in the source code. 
+The Algorithm \ref{alg:one} thus refers to the first join training of $\chi,\Phi,\Gamma$ networks. Feature from the 2D CNN encoder-decoder $\chi$ are then distilled in Algorithm \ref{alg:two} through a feature radiance fields in 3D. Finally, our whole EpiNeRF architecture is fine-tuned in Algorithm \ref{alg:fourth} thanks to our epipolar-based feature attention mechanism. 
+
+\begin{algorithm}[htp!]
+\caption{Joint pre-training of CNN $\chi$, NeRF $\Phi$, Hypernetwork $\Gamma$ }\label{alg:one}
+\SetKwInOut{Input}{input}
+\SetKwInOut{Parameter}{parameter}
+\SetKwInOut{Output}{output}
+\Input{Image pairs $\{I_{s},I_{t}\}$}
+\Parameter{\textbf{M} symmetry matrix on (YZ) plane}
+\Output{Trained $\zeta=\{\chi,\Phi,\Gamma\}$} 
+\medskip
+\KwResult{$\chi$ trained to produce view-aligned features}
+$N_{iter},\hspace{.1cm} N_{s},\hspace{.1cm} N_{rays},\hspace{.1cm}b_{s} \gets 500.000,\hspace{.1cm} 64,\hspace{.1cm} 256,\hspace{.1cm} 4$ \tcp*[l]{Training hyperparameters}
+$d_{\text{feat}} \gets 256$\;
+\While{j $\leq N_{iter}$}{
+    \textcolor{red!50}{[FORWARD PASS]}\;
+     $z_{s}$\hspace{.05cm}, $\textbf{F}_{s}  \gets \chi(I_{s})$ \hspace{3cm}\textcolor{gray!80}{\# 
+   [bs,$d_{\text{feat}}$] , [bs,H,W,$d_{\text{feat}}$]}\;
+    $\theta = \Gamma(z_{s})$ \tcp*{HyperNetwork $\Gamma$ forward pass}
+    $\mathbf{r}(t) \gets \mathbf{o} + t\mathbf{d}$ \tcp*{Cast ray from target viewpoint}
+        \For{$1 \leq i \leq N_{s}$}{
+        $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$\hspace{3cm}\textcolor{gray!80}{\# 
+  [bs,$N_{rays},N_{s}$]}\; 
+        $x^{(i)}_{symm} \gets \mathbf{M}x^{(i)}$\tcp*{3D samples symmm. (YZ) plane}
+        $f_{s}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}))$ \tcp*{Get source-aligned feature from $F_{s}$}
+        $f_{s,symm}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}_{symm}))$ \tcp*{$f_{s}^{(i)}$ symmetrized counterpart}
+        $f^{(i)} = [f_{s}^{(i)} | f_{s,symm}^{(i)}]$\tcp*{Concatenation}
+    
+        $\sigma^{(i)},\mathbf{c}^{(i)} \gets \Phi_{\theta}(x^{(i)},\mathbf{d},f_{s}^{(i)})$ \tcp*{NeRF $\Phi$ forward pass}
+        }
+        $c \gets \sum_{i=1}^{N_{s}} T_{\sigma}^{(i)}(1-\exp(-\delta_{i}\sigma^{(i)}))\textbf{c}^{(i)}$ \textcolor{gray!80}{\# 
+  [bs,$N_{rays}$,3]} \tcp*{Vol. rendering}
+  \;
+  \textcolor{red!50}{[BACKWARD PASS]}\;
+    $\zeta = \{\chi,\Phi,\Gamma\}$ \tcp*{Trainable architectures }
+    $\mathcal{L}_{\zeta}= \sum_{\mathbf{r}\in\mathcal{R}} || c(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2}$\tcp*{Training loss }
+    $\Theta_{\zeta} \gets AdamW(\theta_{\zeta},\nabla_{\theta_{\zeta}} \mathcal{L}_{\zeta})$ \tcp*{Backpropagation - Weights update}
+    }
+\end{algorithm}
+
+\begin{algorithm}[htp!]
+\caption{Training of NeRFeature $\Psi$ via $\chi$ feature distillation }\label{alg:two}
+\SetKwInOut{Input}{input}
+\SetKwInOut{Arch}{Freezed}
+\SetKwInOut{Output}{output}
+\SetKwInOut{Parameter}{parameter}
+\Input{Image pairs $\{I_{s},I_{t}\}$}
+\Parameter{Intrinsic camera parameters ($3\times3$ matrix) $K$}
+\Arch{CNN encoder/decoder $\chi$ }
+\Output{Trained NeRFeature $\Psi$ } 
+\medskip
+\KwResult{$\Psi$ trained to produce target-aligned features $f_{t} \in \mathbb{R}^{d_{\text{feat}}}$ from source-aligned ones.}
+$N_{iter},\hspace{.1cm} N_{s},\hspace{.1cm} N_{rays},\hspace{.1cm}b_{s} \gets 300.000,\hspace{.1cm} 96,\hspace{.1cm} 256,\hspace{.1cm} 4$ \tcp*[l]{Training hyperparameters}
+$d_{\text{feat}} \gets 256$\;
+\While{j $\leq N_{iter}$}{
+    \textcolor{red!50}{[FORWARD PASS]}\;
+        \textunderscore \hspace{.05cm}, $\textbf{F}_{s}  \gets \chi(I_{s})$ \hspace{3cm}\textcolor{gray!80}{\# 
+  [bs,H,W,$d_{\text{feat}}$]}\;
+         \textunderscore \hspace{.05cm}, $\textbf{F}_{t}  \gets \chi(I_{t})$\;
+         $\mathbf{r}(t) \gets \mathbf{o} + t\mathbf{d}$ \tcp*{Cast ray from target viewpoint}
+        \For{$1 \leq i \leq N_{s}$}{
+        $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$\hspace{3cm}\textcolor{gray!80}{\# 
+  [bs,$N_{rays}$,$N_{s}$]}\; 
+        $f_{s}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}))$ \tcp*{Get source-aligned feature from $F_{s}$}
+        $\rho^{(i)},\mathbf{v}^{(i)}_{t} \gets \Psi(x^{(i)},\mathbf{d},f_{s}^{(i)})$ \tcp*{NeRFeature $\Psi$ forward pass}
+        }
+
+        $f_{t} \gets \sum_{i=1}^{N_{s}} T_{\rho}^{(i)}(1-\exp(-\delta_{i}\rho^{(i)}))\textbf{v}^{(i)}_{t}$ \textcolor{gray!80}{\# 
+  [bs,$N_{rays}$,$d_{\text{feat}}$]} \tcp*[l]{Vol. rendering}
+  \;
+  \textcolor{red!50}{[BACKWARD PASS]}\;
+    $\mathcal{L}_{\Psi}= \sum_{\mathbf{r}\in\mathcal{R}} || f_{t}(\mathbf{r}) - f_{t}^{(GT)}(\mathbf{r}) ||_{2}^{2}$\tcp*{Loss - $f_{t}^{(GT)}(\mathbf{r}) =\mathbf{F}_{t}(K\mathbf{r})$}
+    $\Theta_{\Psi} \gets AdamW(\theta_{\Psi},\nabla_{\theta_{\Psi}} \mathcal{L}_{\Psi})$ \tcp*{Backpropagation - Weights update}
+    }
+\end{algorithm}
+
+\newpage
+\begin{algorithm}[htp!]
+\caption{Fine-tunning of the complete EpiNeRF architecture including $\chi,\Gamma,\Phi$}\label{alg:fourth}
+\SetKwInOut{Input}{input}
+\SetKwInOut{Arch}{Freezed}
+\SetKwInOut{PreTrained}{Pre-trained}
+\SetKwInOut{Output}{output}
+\SetKwInOut{Parameter}{parameter}
+\Input{Image pairs $\{I_{s},I_{t}\}$}
+\Parameter{\textbf{M} symmetry matrix on (YZ) plane}
+\Arch{NeRFeature $\Psi$ }
+\PreTrained{$\zeta = \{\chi,\Phi,\Gamma\}$ (Alg. 1) }
+\Output{$\zeta = \{\chi,\Phi,\Gamma\}$ fine-tunned} 
+\medskip
+\KwResult{Final EpiNeRF model for single-image NVS}
+$N_{iter},\hspace{.1cm} N_{s},\hspace{.1cm} N_{rays},\hspace{.1cm}b_{s} \gets 100.000,\hspace{.1cm} 64,\hspace{.1cm} 256,\hspace{.1cm} 4$ \tcp*[l]{Training hyperparameters}
+$d_{\text{feat}} \gets 256$\;
+\While{j $\leq N_{iter}$}{
+    \textcolor{red!50}{[FORWARD PASS]}\;
+        $z_{s}$ \hspace{.05cm}, $\textbf{F}_{s}  \gets \chi(I_{s})$ \hspace{3cm}\textcolor{gray!80}{\# 
+  [bs,H,W,$d_{\text{feat}}$]} \tcp*[l]{(Alg. 1)}
+         $\mathbf{r}(t) \gets \mathbf{o} + t\mathbf{d}$ \tcp*{Cast ray from target viewpoint}
+         $\theta = \Gamma(z_{s})$ \tcp*{HyperNetwork $\Gamma$ forward pass}
+        \textcolor{orange!50}{[Coarse NeRF $\Phi$]}\;
+        \For{$1 \leq i \leq N_{s}$}{
+        $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$\hspace{3cm}\textcolor{gray!80}{\# 
+  [bs,$N_{rays}$,$N_{s}$]}\tcp*{$t_{i}\sim$\textit{Uniform}}\; 
+        $x^{(i)}_{symm} \gets \mathbf{M}x^{(i)}$\tcp*{3D samples symmm. (YZ) plane}
+        $f_{s}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}))$ \tcp*{Get source-aligned feature from $F_{s}$}
+        $f_{s,symm}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}_{symm}))$ \tcp*{$f_{s}^{(i)}$ symmetrized counterpart}
+        $f^{(i)} = [f_{s}^{(i)} | f_{s,symm}^{(i)}]$\tcp*{Concatenation}
+        
+        $f_{t} \gets \Psi(x^{(i)},\mathbf{d},f_{s}^{(i)})$ \tcp*{NeRFeature $\Psi$ forward pass. (Alg. 2)}
+        $s_{a}^{(i)} = softmax\left(\frac{f_{t}^{T}\times f_{s}^{(i)}}{\sqrt{d_{\text{feat}}}}\right)$\textcolor{gray!80}{ $\in$[0,1]} \tcp*{Cross-attention score}
+        $\sigma^{(i)},\mathbf{c}^{(i)} = \Phi_{\theta}(x^{(i)},\mathbf{d},f^{(i)})$ \tcp*{Coarse NeRF $\Phi$ forward pass}
+        $\omega^{(i)} = T_{\sigma}^{(i)}(1-\exp(-\delta_{i}\sigma^{(i)}))$ 
+        }
+        \;
+        $c_{coarse} \gets \sum_{i=1}^{N_{s}}\omega^{(i)}\textbf{c}^{(i)}$ \tcp*{Coarse volume rendering}
+        $\omega \gets \omega \times s_{a}$ \tcp*{Weights distribution att. based correction}
+        $t_{i}\sim F^{-1}(u)$ \tcp*{Impor. samp.
+ of CDF $F(j)=\sum_{i=1}^{j}\omega_{i}$, $u\sim$\textit{Uniform}}
+        \;
+        \textcolor{orange!50}{[Fine NeRF $\Phi$]}\;
+        \For{$1 \leq i \leq N_{s}$}{
+        $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$ 
+        $x^{(i)}_{symm} \gets \mathbf{M}x^{(i)}$\tcp*{3D samples symmm. (YZ) plane}
+        $f_{s}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}))$ \tcp*{Get source-aligned feature from $F_{s}$}
+        $f_{s,symm}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}_{symm}))$ \tcp*{$f_{s}^{(i)}$ symmetrized counterpart}
+        $f^{(i)} = [f_{s}^{(i)} | f_{s,symm}^{(i)}]$\tcp*{Concatenation}
+        $\sigma^{(i)},\mathbf{c}^{(i)} = \Phi_{\theta}(x^{(i)},\mathbf{d},f^{(i)})$ \tcp*{Fine NeRF $\Phi$ forward pass}
+        $\omega^{(i)} = T_{\sigma}^{(i)}(1-\exp(-\delta_{i}\sigma^{(i)}))$ 
+        }
+        $c_{fine} \gets \sum_{i=1}^{N_{s}}\omega^{(i)}\textbf{c}^{(i)}$ \tcp*[l]{Fine volume rendering}
+  \;
+  \textcolor{red!50}{[BACKWARD PASS]}\;
+    $\mathcal{L}_{\zeta}= \sum_{\mathbf{r}\in\mathcal{R}} || c_{coarse}(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2} +|| c_{fine}(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2}$\tcp*{Loss}
+    $\Theta_{\zeta} \gets AdamW(\theta_{\zeta},\nabla_{\theta_{\zeta}} \mathcal{L}_{\Psi})$ \tcp*{Backpropagation - Weights update}
+    }
+\end{algorithm}
+
+\subsection{Additional results}
+
+We finally present some additional EpiNeRF visuals results. 
+
+Our results on Figures \ref{fig:supp_NVScars} and \ref{fig:supp_NVSchairs} show consistent rendered novel views with fine grained details, even on viewpoints that are far away from the source. 
+
+\begin{figure}[htp!]
+    \center
+  \includegraphics[width=\linewidth]{images/epinerf/supp_NVScars.png}
+  \caption{Additional novel views on ShapeNet-SRN \textit{Cars} class. }
+  \label{fig:supp_NVScars}
+\end{figure}
+
+
+\begin{figure}[htp!]
+    \center
+  \includegraphics[width=\linewidth]{images/epinerf/supp_NVSchairs.png}
+  \caption{Additional novel views on ShapeNet-SRN \textit{Chairs} class.}
+  \label{fig:supp_NVSchairs}
+\end{figure}
+
+\begin{figure*}[htp!]
+    \center
+  \includegraphics[width=.9\linewidth]{images/epinerf/supp_cars_ex.png}
+  \caption{Comparison with state-of-the-arts methods on ShapeNet-SRN \textit{Chairs} class.   
+ Compared to SymmNeRF \citep{li2022symmnerf} and VisionNeRF \citep{lin2023vision}, our EpiNeRF yields novel views closer to those of the ground truth. }
+  \label{fig:supp_cars}
+\end{figure*}
+
+Figures \ref{fig:supp_cars} and \ref{fig:supp_chairs} finally depict additional side by side renderings comparison with state-of-the-art methods. 
+
+\begin{figure*}[htp!]
+    \center
+  \includegraphics[width=.9\linewidth]{images/epinerf/supp_chairs_ex.png}
+  \caption{Comparison with state-of-the-arts methods on ShapeNet-SRN \textit{Chairs} class.   
+ Compared to SymmNeRF \citep{li2022symmnerf} and VisionNeRF \citep{lin2023vision}, our EpiNeRF yields novel views closer to those of the ground truth.}
+  \label{fig:supp_chairs}
+\end{figure*}
+
 \section{Gaussian Splatting}
 \subsection{Spherical Harmonics: Definition and construction}
 \label{appendix:gs-sh}
@@ -18,13 +238,11 @@
 \label{appendix:spherical-interp}
 
 
+
 \section{AdaptativeSR}
-
 \subsection{Introduction}
-\label{sec:intro}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{appendix:adaptativesr-intro}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 The image-based 3D reconstruction task aims at building a 3D representation of a given object depicted onto a natural or synthetic set of images. Human being learned from an early age to apprehend their surrounding 3D environment and thus have high cognitive abilities for mentally inferring a 3D scene from a single 2D image. Such a task is way more challenging in computer vision since there are no manners for a 2D image to lossless embrace the information contained in an entire 3D scene. While image-based 3D reconstruction is approached for decades in computer vision and graphics with robust and renowned techniques such as Structure-from-Motion \citep{longuet1981computer}, the latest learning-based approaches address the problem through a new prism by making extensive use of deep neural networks
 \citep{kanazawa2018learning,deng2019accurate,saito2020pifuhd}.
 
@@ -77,7 +295,7 @@ As we only leverage onto \textit{S} (and the camera pose to render \textbf{M}) t
 
 \begin{figure*}[htp!]
 \begin{center}
-\includegraphics[width=13cm]{images/adaptativesr/final_figure.jpg}
+\includegraphics[width=\linewidth]{images/adaptativesr/final_figure.jpg}
 \end{center}
     \caption{Architecture overview of our method. \textit{Based on a 3D mesh} \textbf{M} \textit{and a camera pose information, our module leverages onto PyTorch3D rasterizer to detect and prune onto the mesh surface by only getting consideration for the ground-truth alpha mask S}}
 \label{fig:pipeline_overview}
@@ -148,9 +366,9 @@ We both present qualitative and quantitative results of our pruning based method
 
 We aim first to highlight to which extent we can detect the relevant faces on the 3D mesh that might be pruned during the rendering. Figure \ref{fig:face2prune} highlights the faces considered as wrongly rendered compared to the ground-truth alpha mask on three different chairs. Based on these 2D silhouette considerations, we achieve visually more appealing results than \citep{pan2019deep}. 
 
-\begin{figure*}[htb]%[htp!]
+\begin{figure*}[htp!]%[htp!]
 \begin{center}
-\includegraphics[width=8cm]{images/adaptativesr/highlight_faces.png}
+\includegraphics[width=\linewidth]{images/adaptativesr/highlight_faces.png}
 \end{center}
     \caption{Silhouette based comparison on several instance from the ShapeNetCore test set. \textit{Faces rendered onto red regions should be pruned on 3D mesh surface} - $\tau = $ \textbf{0.05} - From left to right: Ground-Truth, Baseline, TMN\citep{pan2019deep}, Ours with highlighted faces to prune, Ours final result.}
 \label{fig:face2prune}
@@ -158,9 +376,9 @@ We aim first to highlight to which extent we can detect the relevant faces on th
 
 The Figure \ref{fig:pruning_multi_view} somehow extends the later observation through 6 different viewpoints from the same chair instance. In this specific example, the TMN pruning module failed to detect some faces to prune. It produced the same mesh as the baseline one, while our method successfully pruned the faces that were rendered the worst, according to the ground truth alpha mask. The faces that are pruned on each view are independent of the other viewpoints. 
 
-\begin{figure*}[h!]%[htp!]
+\begin{figure*}[htp!]%[htp!]
 \begin{center}
-\includegraphics[width=8.cm]{images/adaptativesr/severalview2D.png}
+\includegraphics[width=\linewidth]{images/adaptativesr/severalview2D.png}
 \end{center}
     \caption{Rendered silhouette mask results on 6 viewpoints - $\tau =\textbf{0.05}$ - From top to bottom: Ground-Truth, TMN\citep{pan2019deep},  Ours}
 \label{fig:pruning_multi_view}
@@ -212,8 +430,8 @@ Since the method we designed only relies on 2D considerations, the camera viewpo
 
 \begin{figure}[h!]
   \centering
-  \subfloat[a][2D IoU]{\includegraphics[width=8cm]{images/adaptativesr/multiviewsPLOT.png} \label{fig:a}} \\
-  \subfloat[b][Chamfer distance]{\includegraphics[width=8cm]{images/adaptativesr/plot_Chamfer_Distance_last.png} \label{fig:b}}
+  \subfloat[a][2D IoU]{\includegraphics[width=.5\linewidth]{images/adaptativesr/multiviewsPLOT.png} \label{fig:a}} \\
+  \subfloat[b][Chamfer distance]{\includegraphics[width=.5\linewidth]{images/adaptativesr/plot_Chamfer_Distance_last.png} \label{fig:b}}
   \caption{Camera viewpoint influence over the 2D IoU (top, (a)) and Chamfer distance (bottom, (b) scores.} \label{fig:pruning_viewpoint_influence}
 \end{figure}
 
