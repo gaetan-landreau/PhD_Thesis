@@ -233,6 +233,18 @@ Figures \ref{fig:supp_cars} and \ref{fig:supp_chairs} finally depict additional 
 
 \subsection{3D covariance splatting}
 \label{appendix:cov}
+Let's first get into the equation \ref{eq:gs-3dcov-transfrom} presented in Chapter \ref{chapter:gausssplat}. 
+
+Covariance $\Sigma_{k}$ is expressed in the camera coordinates as $R\Sigma_{k}R^{T}$. Indeed, from a general perspective, for any transformed point $p$ through $W$: 
+
+\begin{equation}
+    \begin{aligned}
+    \text{Var}[Wp] &= \mathbb{E}[(Wp - \mathbb{E}[Wp])(Wp - \mathbb{E}[Wp])^T] \\
+    &= \mathbb{E}[(Rp+t - (R\mathbb{E}[p]+t))(Rp+t - (R\mathbb{E}[p]+t))^T] \\
+    &= \mathbb{E}[R(p - \mathbb{E}[p])(p - \mathbb{E}[p])^T R^T] \\
+    &= R\text{Var}[p]R^T \\
+    \end{aligned}
+    \end{equation}
 
 \subsection{Spherical Interpolation}
 \label{appendix:spherical-interp}

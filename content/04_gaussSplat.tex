@@ -53,7 +53,6 @@ In order to be as close as possible to what was investigated for CarCutter and t
 
 It exists a plaethora of different ways to represent 3D data, either explicitly (such as point clouds, meshes) or implicitly. \ac{NeRF} implicitly embeds the whole structure and texture of a scene in its inner weights: an image is rendered by sampling points on casted rays and quering the architecture accordingly. \ac{GS} rather leverages on a 3D gaussian primitive to explicitly model the 3D scene and get a fully differentiable pipeline that can solely be supervised at 2D-image level. Figure \ref{fig:gs-overview} gives few insights regarding how such a pipeline is built.  
 
-
 \begin{figure*}[htb!]
     \center
   \includegraphics[width=\linewidth]{images/gaussiansplatting/overview-pipelineGS.png}
@@ -61,78 +60,95 @@ It exists a plaethora of different ways to represent 3D data, either explicitly 
   \label{fig:gs-overview}
 \end{figure*}
 
-
 We present below the key steps that were defined in the original \ac{GS} seminal work \citep{kerbl20233d}.
 
-\noindent \textbf{Initialization} From a sparse coloured \ac{SFM}-3D point cloud, refered as $\mathcal{P}\in\mathbb{R}^{N\times(3+3)}$, an associated set of 3D Gaussians $\mathcal{G}$ is build. Each primitive $g \in \mathcal{G}$ has therefore an attached set of attributes $\{\mu,\Sigma,c,\alpha\}$, defined by: 
+\noindent \textbf{Initialization} From a sparse coloured \ac{SFM}-3D point cloud, refered as $\mathcal{P}\in\mathbb{R}^{N\times(3+3)}$, an associated set of 3D Gaussians $\{\mathcal{G}_{k}|k=1,...,K\}$ is build. Each primitive $\mathcal{G}_{k} $ has therefore an attached set of attributes $\{\mu_{k},\Sigma_{k},c_{k},\alpha_{k}\}$, defined by: 
 \begin{itemize}
-    \item A mean $\mu$, corresponding to the original point location in $M$. 
-    \item A covariance $\Sigma$ $3\times3$ matrix, that must be positive semi-definite. Initialized to be isotropic. 
-    \item A color $c$, represented using \ac{SH} coefficients. Additional information regarding \ac{SH} theory and construction can be found in the Appendix \ref{appendix:gs-sh}. 
-    \item An opacity/transparency $\alpha$ value. 
+    \item A mean $\mu_{k}$, corresponding to the original point location in $M$. 
+    \item A covariance $\Sigma_{k}$ $3\times3$ matrix, that must be positive semi-definite. Initialized to be isotropic. 
+    \item A color $c_{k}$, represented using \ac{SH} coefficients. Additional information regarding \ac{SH} theory and construction can be found in the Appendix \ref{appendix:gs-sh}. 
+    \item An opacity/transparency $\alpha_{k}$ value. 
 \end{itemize}
 
-These attributes that are going to be learned, for all gaussians in  $\mathcal{G}$ during training. The table \ref{tab:gauss-param} summarizes the total number of parameter that need be be optimized for each gaussian $g$. 
+While mean, color and opacity can be optimized without any constraints with gradient-descent based algorithm, $\Sigma_{k}$ has to remain semi-definite positive \footnote{\textit{i.e} $ \forall a \in \mathbb{R}^{3}: a^{T}\Sigma_{k} a \geq 0$} during training to represent a meaningful 3D coviance matrix. As holding this constraint during the optimization would be to complex, $\Sigma_{k}$ is factorized (as an eigendecomposition) in the world coordinate system via with a rotation matrix $O_{k}$ (analytically expressed with 4 quaternions) and a scaling vector $s_{k}$: 
 
+\begin{equation}
+    \Sigma_{k} = O_{k}s_{k}s_{k}^{T}O_{k}^{T}
+\end{equation}
+As any matrix expressed with $A^{T}A$ is always semi-definite positive, $\Sigma_{k}$ is now properly constrained. Term $O_{k}s_{k}$ has to be seen as scaled rotation matrix, where $O_{k}$ defines the Gaussian $\mathcal{G}_{k}$ rotation in space and $s_{k}$ its size. 
+
+These attributes that are going to be learned, for all gaussian primitives during training. The table \ref{tab:gauss-param} summarizes the total number of parameter that need be be optimized for each gaussian. 
 
 \begin{table}[h!]
   \centering
-  \begin{tabular}{lccc}
+  \begin{tabular}{lcc}
   \hline
-  Parameter & Symbol & Size & Note \\
+  Parameter  & Size & Note \\
   \hline
-  Position (mean) & $\mu$ & 3 & 3D vector $(x, y, z)$ \\
-  Scale & $s$ & 3 & 3D vector $(x, y, z)$ \\
-  Rotation (quaternion) & $q$ & 4 & scalar + 3D vector $(i, j, k)$ \\
-  Opacity & $o$ & 1 & scalar \\
-  SH coefficients & $sh$ & 48 & 4 bands of SH; $(1+3+5+7)\times3$ \\
+  Position (mean)  $\mu$ & 3 & 3D vector $(x, y, z)$ \\
+  3D Covariance $\Sigma$ & 7 & 3D vector $(x, y, z)$ + scalar + 3D vector  $(i, j, k)$\\
+  Opacity  $\alpha$ & 1 & scalar \\
+  SH coefficients  $sh$ & 48 & 4 bands of SH; $(1+3+5+7)\times3$ \\
   \hline
-  Total (per Gaussian) & & 59 & \\
+  Total (per Gaussian)  & 59 & \\
   \hline
   \end{tabular}
-  \caption{Your caption here.}
-  \label{table:your_label}
-  \end{table}
-  
+  \caption{Per gaussian parameters that need to be optimized.}
+  \label{tab:gauss-param}
+\end{table}
 
-While mean, color and opacity can be optimized without any constraints with gradient-descent based algorithm, $\Sigma$ has to remain semi-definite positive \footnote{\textit{i.e} $ \forall a \in \mathbb{R}^{3}: a^{T}\Sigma a \geq 0$} during training to represent a meaningful 3D coviance matrix. As holding this constraint during the optimization would be to complex, $\Sigma$ is factorized (as an eigendecomposition) in the world coordinate system via with a rotation $R$ (analytically expressed with 4 quaternions) and a scaling matrix $S$: 
-
-\begin{equation}
-    \Sigma = RSS^{T}R^{T}
-\end{equation}
-As any matrix expressed with $A^{T}A$ is always semi-definite positive, $\Sigma$ is now properly constrained. Term $RS$ has to be seen as scaled rotation matrix, where $R$ defines the Gaussian $g$ rotation in space and $S$ its size. 
-
-Considering any point \textit{p} in the physical 3D space, a 3D gaussian $g$, has an influence over \textit{p} that can be expressed through: 
+Considering any point \textit{p} in the world 3D space, the geometry of a primitive $\mathcal{G}_{k}$ has an influence over \textit{p} that can be expressed through: 
 
 \begin{equation}
-  f = \alpha\exp(-\frac{1}{2}(p-\mu)^{T}\Sigma^{-1}(p-\mu))
+  \mathcal{G}_{k}(p) = \alpha_{k}\exp(-\frac{1}{2}(p-\mu_{k})^{T}\Sigma_{k}^{-1}(p-\mu_{k}))
 \end{equation}
 
-\noindent \textbf{3D Gaussian projection} The 3D Gaussian parameters need to optimized during the training phase by only leveraging on an image-based supervision signal. The 3D ellipsoides must thus be render on 2D image plane in a differentiable manner and a corresponding 2D mean and covariance need to be derived from $\mu$ and $\Sigma$ for each gaussian using EWA splatting \citep{zwicker2001ewa}. 
+\noindent \textbf{3D Gaussian projection} The 3D Gaussian parameters need to optimized during the training phase by only leveraging on an image-based supervision signal. The 3D ellipsoides must thus be render on 2D image plane in a differentiable manner and a corresponding 2D mean and covariance need to be derived from $\mu_{k}$ and $\Sigma_{k}$ for each primitive using EWA splatting \citep{zwicker2001ewa}. 
 
-Let's denote the world-to-camera extrinsic matrix W and the intrinsic K, the gaussian center is easily projected in 2D through the perspective projection: 
+Given any viewpoint we want to render, let's denote corresponding world-to-camera extrinsic matrix $W=[R|t]$ and the intrinsic $K$. The gaussian center $\mu_{k}$ is easily projected in 2D through the perspective projection: 
 
 \begin{equation}
   \begin{bmatrix}
     u \\
     v \\
     z
-  \end{bmatrix} = KW\mu
+  \end{bmatrix} = KW\mu_{k} = K(R\mu_{k}+t)
 \end{equation}
-and the 2D mean $\mu' = \begin{bmatrix}
+and the 2D mean $\mu_{k}' = \begin{bmatrix}
   u/z \\
   v/z
 \end{bmatrix}$ can be  thus expressed as:
 \begin{equation}
-  \mu' = K(W\mu/(W\mu_{z}))
+  \mu_{k}' = K(W\mu_{k}/(W\mu_{k}^{(z)}))
 \end{equation}
-Regarding the 3D covariance, its splatted 2D version is expressed as:
+
+Regarding the 3D covariance, $\Sigma_{k}$ is expressed in the camera coordinate system through: 
 
 \begin{equation}
-  \Sigma'= JW\Sigma W^{T}J^{T}
+  \Sigma_{k}^{(cc)}= R\Sigma_{k}R^{T}
+  \label{eq:gs-3dcov-transfrom}
 \end{equation}
 
-where $J = \partial \mu' / \partial \mu$ is the Jacobian of the mean projection formula (\textit{i.e} the affine approximation of the 3D-2D projection). Additional information regarding this latest equation can be found in Appendix \ref{appendix:cov}. 
+and in image/ray space as:
+\begin{equation}
+  \Sigma_{k}^{(ic)}= J_{k}\Sigma_{c}J_{k}^{T}
+  \label{eq:gs-3d2dcov}
+\end{equation}
+
+where $J = \partial \mu_{k}' / \partial \mu_{k}$ is the Jacobian of the mean projection formula (\textit{i.e} the affine approximation of the 3D-2D projection). Additional information regarding these equations can be found in Appendix \ref{appendix:cov}. 
+
+As explained in \citep{zwicker2001ewa}, one can drop the thrid row and column of $\Sigma_{k}^{(ic)}$ to get a 2D covariance matrix, named $\Sigma_{k}'$. Applying a projective transformation to any 3D gaussian primitive $\mathcal{G}_{k}$ lead to another scaled 2D gaussian primitives, termed $\g_{k}$: 
+
+\begin{equation}
+  g_{k}(x) = \alpha_{k}\exp(-\frac{1}{2}(x-\mu_{k}')^{T}\Sigma_{k}'^{-1}(p-\mu_{k}'))
+\end{equation}
+
+3DGS seminal work \citep{kerbl20233d} finally performs alpha blending to render a color $c(x)$ through: 
+
+\begin{equation}
+  c(x) = \sum_{k=1}^{K}c_{k}\alpha_{k}g_{k}(x)\prod_{j=1}^{k-1}(1-\alpha_{k}g_{j}(x))
+\end{equation}
+by sorting gaussian primitives by depth order. 
 
 \noindent \textbf{Adaptative Density Control (ADC)} 
 As the original \ac{SFM} point cloud can be extremely sparse, authors from \cite{kerbl20233d} implement both a densification and pruning strategy during training. The pruning is quite simple yet effective: any 3D gaussian that has an opacity $\alpha$ below a fixed threshold $\epsilon_{\alpha}$ during training is removed from $\mathcal{G}$. 
@@ -147,8 +163,6 @@ The densification stategy is not as immediate insofar as it required to both add
 \end{figure*}
 
 
-
-\section{Related Work}
 
 \section{Method}
 \subsection{Camera path stabilization}
@@ -166,7 +180,7 @@ Merging the photographs from the scene depicted on Figure \ref{fig:gs-original_s
 
 Let's denote $\mathcal{I}=\{I_{i}\}_{i=1}^{N}$ the set of N RGB images, paired with their associated viewpoint $\pi_{i}$, and  $\mathcal{C} = \{C^{(i)}\}_{i=1}^{N}$ the set of COLMAP-based camera centers. These centers are expressed in world coordinates as: 
 \begin{equation}
-  C^{(i)}=-R_{i}^{T}\times t_{i}
+  C^{(i)}=-R_{i}^{T}t_{i}
 \end{equation}
  where $R_{i}$ and $t_{i}$ respectivelly account for the world to camera rotation and translation. The car centroid $O_{car}$ is directly built from the 3D tires location\footnote{which are also estimated by another algorithm that would not be described in this manuscript}: 
 
