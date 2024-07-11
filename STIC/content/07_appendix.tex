@@ -1,0 +1,294 @@
+\chapter{Appendix}
+\label{chapter:appendix}
+
+%\minitoc
+%\chapterwithfigures{\nameref*{chapter:appendix}}
+%\chapterwithtables{\nameref*{chapter:introduction}}
+
+\ifthenelse{\boolean{skipAppendix}}{\endinput}{}
+
+
+
+
+
+\section{AdaptativeSR}
+\subsection{Introduction}
+\label{appendix:adaptativesr-intro}
+
+The image-based 3D reconstruction task aims at building a 3D representation of a given object depicted onto a natural or synthetic set of images. Human being learned from an early age to apprehend their surrounding 3D environment and thus have high cognitive abilities for mentally inferring a 3D scene from a single 2D image. Such a task is way more challenging in computer vision since there are no manners for a 2D image to lossless embrace the information contained in an entire 3D scene. While image-based 3D reconstruction is approached for decades in computer vision and graphics with robust and renowned techniques such as Structure-from-Motion \citep{longuet1981computer}, the latest learning-based approaches address the problem through a new prism by making extensive use of deep neural networks
+\citep{kanazawa2018learning,deng2019accurate,saito2020pifuhd}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The single-image based 3D reconstruction issue even brings the challenge one step above as inputs are more constrained. From a general perspective, the latest contributions related to single-image 3D reconstruction chose to work with mesh structures rather than 3D point clouds or voxel grids, since they offer a well-balanced trade-off between computational requirements and tiny 3D details retrieving. Meshes also embed a notion of connectivity between vertices, contrary to the point cloud representation where such valuable property is missing.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The rendering operation somehow fills the gap between the 3D world and the 2D image plane by mimicking the optical image formation process. Such procedure is widely well known in graphics, but it has been brought into computer vision learning-based approaches for only a few years now for a significant reason: the rasterization stage involved in any rendering process is intrinsically non-differentiable since it requires a face selection step. It recently led to self-supervised single-image 3D reconstruction methods where 3D ground truth labels are thus no more needed.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Changing the topology during the 3D mesh reconstruction process can mainly be done in two ways: either by pruning some edges/faces or by adding edges/vertice to generate new faces onto the mesh surface. Single-image 3D reconstruction methods that require 3D supervision already apply these techniques in their training pipeline\citep{pan2019deep,nie2020total3dunderstanding,smith2019geometrics}. However, most of the current state of the art methods in self-supervised single-image 3D reconstruction -where 3D labels are thus no more needed- perform mesh reconstruction with a roughly similar approach. An Encoder-Decoder network iteratively learns to predict an elementary per-vertex displacement on a 3D template sphere to reconstruct as faithfully as possible a 3D mesh associated with the provided input images. This strategy only affects the geometry of the mesh and thus do not get consideration for its topology. Indeed, vertice position impacts edges length and dihedral face angles but let the overall topology unchanged. These topological considerations, yet fundamental when embracing 3D mesh structures, are often bypassed in the current self-supervised single image-based 3D reconstruction literature. We thus claim that the latest advances in differentiable rendering \citep{liu2019soft,ravi2020accelarating} are informative enough to address this fundamental concept.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This paper thus brings topological considerations into the self-supervised image-based 3D reconstruction framework. The core idea of our work is to leverage onto the differentiable renderer from \citep{ravi2020accelarating} to detect the potential faces/edges to prune onto the mesh without leveraging onto 3D supervision, as made in \citep{pan2019deep,nie2020total3dunderstanding,smith2019geometrics}. To the best of our knowledge, no attempts have been made in this direction. Our work is thus in line with self-supervised image-based 3D reconstruction methods, even though our topological refinement module is agnostic to the mesh reconstruction network used. Our contribution is summarised through: 
+\begin{itemize}
+    
+    \item A fast and efficient strategy to prune faces onto a 3D mesh by only leveraging 2D alpha masks and camera pose. 
+
+    \item A topological refinement module that is agnostic to the 3D mesh reconstruction network.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Related works}
+\label{sec:related_works}
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Issues presented in this section are the closest ones related to our work. \newline 
+
+\noindent\textbf{Differentiable renderer} OpenDR \citep{loper2014opendr} is one of the first differentiable renderers and therefore paved the way in this line of work in 2014. However, the differentiable rendering issue has gained interest over the past few years. The significant progress that has been achieved in this direction since 2017 tend to prove such a trend. Hiroharu Kato \etal introduced an approximate gradient strategy with NMR\citep{kato2018neural} while SoftRasterizer\citep{liu2019soft} proposed a truly differentiable framework without gradient approximation through a probability-distance based formulation. Wenzheng Chen \etal designed their differentiable renderer with foreground-background pixel consideration in their DIB-R \citep{chen2019learning} method. Whereas an interpolation-based formulation gives foreground pixels value, background ones are predicted through the same probability maps aggregation as used in \citep{liu2019soft}. These three differentiable frameworks are the most used ones in the latest self-supervised single-image 3D reconstruction methods \citep{kanazawa2018learning,li2020self,pavllo2020convolutional}. While PyTorch3D \citep{ravi2020accelarating} is extremely powerful from a computational point of view, it has been released too recently and has not yet given rise to new contributions in self-supervised 3D reconstruction. In addition to these renderers that are thus primarily designed to work with mesh structures, other types of renderers\citep{niemeyer2020differentiable,jiang2020sdfdiff} also emerged few years ago to address the rendering of 3D shapes parametrized through implicit surfaces. 
+
+\noindent\textbf{Single Image-based 3D Reconstruction} First works related to the single image-based 3D reconstruction issue in a deep learning framework \citep{choy20163d,girdhar2016learning,yang2018dense} make extensive use of 3D datasets \citep{chang2015shapenet,sun2018pix3d} since the mesh generation network is entirely supervised through 3D ground truth labels. These methods entirely missed out on the physical image formation process during training since there is no need to consider it as soon as 3D labels are accessible. In this way, existing 3D loss functions are sufficient to predict feasible 3D mesh structures from a 3D sphere template. While a tremendous number of works have leveraged over 3D labels, the current trend in single image-based 3D reconstruction instead tries to capitalise onto differentiable renderers and thus limit as much as possible the need for an expensive 3D supervision. It leads over the last few years to a new line of work called self-supervised image-based 3D reconstruction  \citep{kanazawa2018learning,li2020self,pavllo2020convolutional,henderson2020leveraging} where 3D ground truth meshes are no more needed. Differentiable rendering allows to render the predicted 3D mesh onto a 2D image plane and get meaningful 2D supervision signal to train a mesh reconstruction network in an end-to-end way. 
+
+\noindent\textbf{Topology} Implicit-based methods spontaneously handle complex topology since any 3D object is described in a continuous 3-dimensional vector field where the notion of connectivity is absent. Generated surfaces do not suffer from any resolution limitation since the 3D space is not discretized in this representation. Works relying on such formulation produce outstanding results but often require extensive use of 3D supervision \citep{saito2020pifuhd}, even though the latest research achieved to reconstruct 3D implicit surface without 3D supervision \citep{niemeyer2020differentiable,liu2019learning}. 
+
+Topological issues on explicit-based formulation are quite well addressed when it comes to supervising the mesh generation with 3D labels. Pix2Mesh \citep{wang2018pixel2mesh} leverage onto the capacity of Graph Neural Networks and their graph unpooling operation to add new vertices on the initial template mesh during training. With the same desire to add new vertices/faces \citep{smith2019geometrics} consider an explicit adaptive face splitting strategy to locally increase faces density and thus ensure that the generated mesh will have enough detail around the most complex regions. The face splitting decision relies on local curvature consideration with a fixed threshold. These two methods adopt a progressive mesh growing strategy and thus start from a low-resolution template mesh to end up with a 3D mesh which is complex only in the most challenging regions to reconstruct.
+
+On the other hand, Junyi Pan \etal \citep{pan2019deep} paved the way to prune irrelevant faces onto 3D mesh surface. They introduced a face-pruning method through a 3D point cloud based error-estimation network. While \citep{pan2019deep} used a fixed scalar threshold to determine whether or not a face is discarded, \citep{nie2020total3dunderstanding} proposes a refined version of such method by performing edges pruning with an adaptative thresholding strategy set on 3D local considerations.
+
+To the best of our knowledge,  such topological issue on 3D mesh structures is currently not addressed in the state of the art methods that extensively rely on 2D cues for training. Generated meshes are thus always isomorphic to a 3D sphere.  
+
+\subsection{Method}
+\label{sec:method}
+
+We introduce our method and the associated framework in this section. The first one gives a complete overview of our methodology whereas the second part mainly focuses on implementation details and the face-pruning procedure we have designed. 
+
+Regarding the notation, we denote by \textit{I}, size $H\times W \times 4$ the source image and \textit{S} the corresponding alpha mask. We aim to refine the topology of the mesh \textbf{M}=(V,F), where V and F respectively stand for the set of vertices and faces. We assume such mesh have been obtained from a genus-0 template shape by any single-image 3D mesh reconstruction network feed with either \textit{I} or \textit{S}. Camera pose is defined through a camera distance scalar value (form camera center to the object) with an azimuth and elevation angle. 
+
+\paragraph{General overview}
+As we only leverage onto \textit{S} (and the camera pose to render \textbf{M}) to perform topological refinement over the mesh surface, we necessarily must rely on a renderer to get back onto 2D considerations from  \textbf{M}. The core idea of our work is to identify the faces that were re-projected the worst onto the 2D image plane during the rasterization procedure through the prior information from \textit{S}. Figure \ref{fig:pipeline_overview} depicts the general overview of our face-pruning method.
+
+\begin{figure*}[htp!]
+\begin{center}
+\includegraphics[width=\linewidth]{images/adaptativesr/final_figure.jpg}
+\end{center}
+    \caption{Architecture overview of our method. \textit{Based on a 3D mesh} \textbf{M} \textit{and a camera pose information, our module leverages onto PyTorch3D rasterizer to detect and prune onto the mesh surface by only getting consideration for the ground-truth alpha mask S}}
+\label{fig:pipeline_overview}
+\end{figure*}
+
+Detecting those faces can be made through the computation of an Intersection over Union (IoU) score between the face from F involved in the rendering of \textbf{M} and the ground-truth alpha mask \textit{S}. Those faces can then be removed from the 3D mesh surface or directly discarded in the shader stage of the renderer. Inspired by the thresholding strategy introduced in \citep{pan2019deep}, we set an adaptative threshold $\tau$ based on the IoU score distribution and quantile $Q_{\tau}$ where $\tau \in [0,1]$.
+
+\begin{equation}
+    \tau=Q_{\tau}({\gamma/\Gamma})
+\end{equation}
+
+where ${\gamma/\Gamma}$ refers to the IoU distribution score. 
+In a similar fashion line to what \citep{pan2019deep} did for the thresholding strategy in their pipeline architecture, the setting of $\tau$ influences the number of pruned faces: the lower $\tau$ is, the lower the number of faces detected as wrongly projected will be.
+
+\paragraph{Implementation details.}
+We implement our topological refinement strategy onto the renderer from the PyTorch3D \citep{ravi2020accelarating} library. The renderer's modularity offered by \citep{ravi2020accelarating} is worth mentioning since the entire rendering procedure can be adjusted as desired. We paid attention to its rasterization stage in our work for its connivance with the one from SoftRasterizer \citep{liu2019soft}. 
+
+One of the core differences it exists between those two frameworks in the silhouette rasterization process concerns the number of faces involved: while PyTorch3D only considers for each pixel location $p_i$ the top-\textit{K} closest faces from the camera center of \textbf{M}, SoftRasterizer equally considers all the faces. 
+We denote by $\mathbf{P}\in \mathbb{R}^{K\times(H\times W)}$ the intermediate probability map produced by \citep{ravi2020accelarating} which is highly related to the one originally introduced in \citep{liu2019soft}. Considering any 2D pixel location $p_{i}=(x_{i};y_{i}) \in \{0,..H-1\}\times\in \{0,..W-1\} $ and the $k^{th}$ closest face $f_{k}^{i}$, the distance based probability tensor $\mathbf{P}$ is expressed through:
+
+\begin{equation}
+    \mathbf{P}[k,p_{i}]=\left(1+e^{-d(f_{k}^{i},p_{i})/\sigma}\right)^{-1} 
+\end{equation}
+
+where $d(f_{k}^{i},p_{i})$ stands for the Euclidean distance between $p_i$ and $f_{k}^{i}$, while $\sigma$ is a hyperparameter to control the sharpness of the rendered silhouette image. Both $d$ and $\sigma$ have been defined in SoftRasterizer \citep{liu2019soft}. \newline
+
+We consider the same soft silhouette shader stage as the one introduced in SoftRasterizer to obtain the soft alpha mask $\hat{S}$ from $\mathbf{P}$ through the aggregation function:
+
+\begin{equation}
+    \hat{S}[p_i]=1 - \prod_{k=1}^{K} (1 - \mathbf{P}[k,p_{i}])
+\end{equation}
+
+It is worth to emphasise the indexing notation in $\mathbf{P}$. Indeed, face indexes $f_{k}^{i}$ and $f_{k'}^{i'}$, $\{i,k\} \neq \{i',k'\}$ might refer to the same physical face on \textbf{M} because a rendered face is likely to cover an area larger than a single pixel. 
+
+We introduced $\mathcal{F}$ as the set of unique faces involved in the rendering of any mesh \textbf{M} obtained from $\mathbf{P}$. The larger K is, the more likely the cardinality of $\mathcal{F}$ will get close to the total number of faces in the original mesh $|F|$. 
+
+Finally and because $\mathbf{P}$ is not exactly designed in the same way as SoftRasterizer did, we denote by $\mathbf{D}=\{D_{j}\}_{j=1}^{|\mathcal{F}|}\in \mathbb{R}^{|\mathcal{F}|\times(H\times W)}$ the same probability map tensor as defined in \citep{liu2019soft}.
+
+The way our module determined whether or not a face should be pruned is conditioned by the degree of overlap between the ground truth alpha mask \textit{S} and the rendered face. Since each face $f_{j} \in \mathcal{F}$ contributes to the final rendered silhouette through its probability map $D_{j}\in \mathbb{R}^{(H\times W)}$, an Intersection over Union (IoU) term is computed: 
+
+\begin{equation}
+\begin{cases}
+     \gamma_{j}=\sum_{p_{i}\in S} \min \left(  D_{j}[p_{i}] , S[p_{i}] \right) \\
+     \Gamma_{j}=\sum_{p_{i}\in S} \max \left( D_{j}[p_{i}],S[p_{i}] \right)
+\end{cases}
+\end{equation}
+
+The ratio $\gamma_{j}/\Gamma_{j}$ gives the well-known IoU score. We extend the computation for a single face $f_{j}$ to all the faces from $\mathcal{F}$, and we note $\gamma/\Gamma \in \mathbb{R}^{|\mathcal{F}|}$ the complete IoU score distribution.
+
+Our method finally leverages onto this distribution score to determine the faces which should be pruned on $\mathbf{M}$. We adopt a thresholding strategy partially inspired from \citep{pan2019deep} and set an adaptative threshold $t$ based on statistical quantile consideration: faces with a lower IoU score than $t=Q_{\tau}(\gamma/\Gamma)$ are pruned from $\mathbf{M}$. Such a choice allows to dynamically adapt the number of faces to prune based on the IoU distribution. 
+
+\subsection{Experiments}
+\label{sec:experiments}
+
+\textbf{Dataset} Our approach has been extensively tested with the ShapeNetCore \citep{chang2015shapenet}. In line with the work from by TMN \citep{pan2019deep}, our experiments are thus restricted to the topologically challenging "chair" class from \citep{chang2015shapenet}. It contains a total of 6774 different chairs, with 1356 instances in the testing set.
+
+\noindent\textbf{Metrics} We evaluate our method through both qualitative and quantitative considerations. We use the 2D IoU metric to assess how well the refined mesh produced by our module better match the ground truth alpha mask compared to the topologically non-refined mesh. We also use 3D metrics with the Chamfer Distance (CD), F-Score and METRO distance to evaluate our method. The METRO criterion is first introduced in \citep{cignoni1998metro} and reconsidered in Thibault Groueix \etal 's AtlasNet \citep{groueix2018papier} work. Its use is motivated by its consideration for mesh connectivity contrary to the CD or F-score metric that only reason onto 3D point clouds distribution. 
+
+
+\noindent\textbf{3D Mesh generation network} Our refinement module can be integrated into any image-based 3D reconstruction pipeline and is thus agnostic to the network responsible for producing the 3D mesh. We chose to work with the meshes generated by \citep{pan2019deep} and thus trained it with the training set from \citep{chang2015shapenet}. Since we only want to focus on face-pruning considerations, we only train the ResNet18 encoder with the first stage of their 3D mesh reconstruction architecture, referred to as \textit{SubNet-1} in \citep{pan2019deep} and abbreviated as TMN in this section. The TMN architecture thus consists of a deformation network and a learnt topological modification module. It is worth mentioning the TMN \citep{pan2019deep} architecture has been trained and used for inference with the provided ground truth labels and rendered images from 3D-R2N2 \citep{choy20163d}. We called "Baseline" the deformation network preceding the topology modification network \citep{pan2019deep}. The genus-0 3D mesh produced by the Baseline network has been obtained from a 3D sphere template with 2562 vertices. 
+
+
+\noindent\textbf{PyTorch3D Renderer} We use the PyTorch3D \citep{nie2020total3dunderstanding} differentiable renderer and set K=30 and $\sigma=5.10^{-7}$ to get the alpha mask as sharp as possible. All the 2D alpha masks, size 224x224, involved in this Experiments section were obtained with the PyTorch3D renderer and have been centred. Similarly to what \citep{choy20163d,liu2019soft,yan2016perspective} did for the rendering silhouette masks, we considered 24 views per meshes with a fixed camera distance $d_{camera}=2.732m$ and an elevation angle set to $30\degree$. The azimuth angle varies by an increment of $15\degree$ from $0\degree$ to $345\degree$. All the meshes predicted by pan2019deep \citep{pan2019deep} were normalised in the same way as ShapeNetCore\citep{chang2015shapenet}. 
+
+We both present qualitative and quantitative results of our pruning based method through 2D and 3D evaluation considerations. We demonstrate how effective our method can be by only leveraging on 2D alpha masks and the renderer modularity. 
+
+\paragraph{Topological refinement evaluation - Qualitative results}
+
+We aim first to highlight to which extent we can detect the relevant faces on the 3D mesh that might be pruned during the rendering. Figure \ref{fig:face2prune} highlights the faces considered as wrongly rendered compared to the ground-truth alpha mask on three different chairs. Based on these 2D silhouette considerations, we achieve visually more appealing results than \citep{pan2019deep}. 
+
+\begin{figure*}[htp!]%[htp!]
+\begin{center}
+\includegraphics[width=\linewidth]{images/adaptativesr/highlight_faces.png}
+\end{center}
+    \caption{Silhouette based comparison on several instance from the ShapeNetCore test set. \textit{Faces rendered onto red regions should be pruned on 3D mesh surface} - $\tau = $ \textbf{0.05} - From left to right: Ground-Truth, Baseline, TMN\citep{pan2019deep}, Ours with highlighted faces to prune, Ours final result.}
+\label{fig:face2prune}
+\end{figure*}
+
+The Figure \ref{fig:pruning_multi_view} somehow extends the later observation through 6 different viewpoints from the same chair instance. In this specific example, the TMN pruning module failed to detect some faces to prune. It produced the same mesh as the baseline one, while our method successfully pruned the faces that were rendered the worst, according to the ground truth alpha mask. The faces that are pruned on each view are independent of the other viewpoints. 
+
+\begin{figure*}[htp!]%[htp!]
+\begin{center}
+\includegraphics[width=\linewidth]{images/adaptativesr/severalview2D.png}
+\end{center}
+    \caption{Rendered silhouette mask results on 6 viewpoints - $\tau =\textbf{0.05}$ - From top to bottom: Ground-Truth, TMN\citep{pan2019deep},  Ours}
+\label{fig:pruning_multi_view}
+\end{figure*}
+
+Even the viewpoint associated to a tricky azimuth angle as the one depicted in the last column is informative enough for our module to remove the relevant faces during rendering.
+
+\paragraph{2D and 3D-based quantitative evaluation}
+
+We compare the performances of our method through different threshold $\tau$ on Table \ref{tab:sota_table} with both the meshes produced by the Baseline network and TMN\citep{pan2019deep}. From the 1356 inferred meshes in the ShapeNetCore\citep{chang2015shapenet} test set, we manually selected 50 highly challenging meshes (from a topological perspective) and render them through the 24 different camera viewpoints we described earlier with the PyTorch3D's renderer. The threshold associated to the F-score has been set to 0.001. A total number of N=10.000 points have been uniformly sampled over the different meshes surface to compute the 3D metrics. 
+
+\begin{table}[htp!]
+\begin{center}
+\caption{2D and 3D-based metric scores comparison with the Baseline and TMN\citep{pan2019deep} - \textit{Presented results were averaged over the 50 instance from our manually curated test set and over the 24 different viewpoints for the 3D metrics.}} 
+\label{tab:sota_table}
+
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textit{Method} & 2D IoU $\uparrow$   & CD $\downarrow$  &F-Score $\uparrow$ & METRO $\downarrow$ \\ 
+ \hline\hline
+Baseline & 0.660  &  6.602  & 53.27  &  1.419      \\ 
+\hline
+TMN\citep{pan2019deep} & 0.681  & \textbf{6.328}   & \textbf{54.23}  & \textbf{1.293} \\ 
+\hline
+Ours $\scriptstyle \tau=0.01$ & 0.747 & 6.541  &  53.39 &  1.418      \\
+\hline
+Ours $\scriptstyle \tau=0.03$ & 0.755 &6.539  & 53.39  &    1.417  \\
+\hline
+Ours $\scriptstyle \tau=0.05$ & 0.763 & 6.540  &   53.34 &   1.417     \\
+\hline
+Ours $\scriptstyle \tau=0.1$ & \textbf{0.778} & 6.551  & 53.27 &  1.416     \\
+\hline
+Ours $\scriptstyle \tau=0.15$ & 0.771 & 6.548  & 53.26  &    1.416   \\
+\hline
+
+%
+\end{tabular}
+\end{center}
+
+\end{table}
+
+Our method outperforms the learned topology modification network from TMN\citep{pan2019deep} according to Table \ref{tab:sota_table} when compared using the 2D IoU score. It is worth re-mentioning that the presented results for TMN\citep{pan2019deep} only come from the very first learned topological modification network and thus do not consider the topological refinement from the \textit{SubNet-2} and \textit{SubNet-3} network. Whereas none of our configurations (with different $\tau$ values) succeed to reach better scores on 3D metrics than TMN\citep{pan2019deep}, we stress on two points: \begin{enumerate}
+    \item Topologically refined mesh by our method always get better results than the ones produced by the Baseline. 
+    \item Our face-pruning strategy only relies on a single 2D alpha mask and does not required any form of 3D-supervised compared to \citep{pan2019deep}. 
+\end{enumerate}
+
+Since the method we designed only relies on 2D considerations, the camera viewpoint we considered to perform the topological refinement must influence the different evaluation metrics. We show in Figure \ref{fig:pruning_viewpoint_influence} to which extent the camera pose affects both the 2D IoU and the CD scores.
+
+
+\begin{figure}[h!]
+  \centering
+  \subfloat[a][2D IoU]{\includegraphics[width=.5\linewidth]{images/adaptativesr/multiviewsPLOT.png} \label{fig:a}} \\
+  \subfloat[b][Chamfer distance]{\includegraphics[width=.5\linewidth]{images/adaptativesr/plot_Chamfer_Distance_last.png} \label{fig:b}}
+  \caption{Camera viewpoint influence over the 2D IoU (top, (a)) and Chamfer distance (bottom, (b) scores.} \label{fig:pruning_viewpoint_influence}
+\end{figure}
+
+
+Azimuth angles around the symmetrical pair $\{90^{\degree}, 270^{\degree}\}$ are more challenging since there are not as informative as the viewpoints closed to $180^{\degree}$. Indeed, our method struggles to get better results than the Baseline on these cases. Our test set is slightly imbalanced since it only contains few chair instances where armrests require topological refinement and conversely a greater number with topologically complex back parts. Our method thus slightly performs worse than the Baseline on around both $90^{\degree}$ and $270^{\degree}$ angles as complex chairs' back structures are invisible on these viewpoints. 
+
+We finally also quantitatively confirm the intuited impact of $\tau$ during the rendering process on the 2D IoU score: the higher $\tau$ is, the larger the number of faces we discarded. 
+
+
+\subsection{Limitations and further work}
+
+
+
+Our method shows encouraging results in 3D meshes topological refinement through 2D alpha mask considerations but has few remaining limitations. First regarding the thresholding strategy we used to determine whether or not a face should be pruned on the 3D mesh surface. While we require to set a fixed hyperparameter - $\tau$ - in our method as \citep{pan2019deep} did, we align with \citep{nie2020total3dunderstanding} on the importance to rely on local 2D and 3D prior information to propose a clever and more robust thresholding strategy. Moreover, our module might also incorrectly behave on the rendered faces closed to the silhouette boundary edges. 
+
+From a broader work perspective, our method currently relies on alpha masks and thus leaves behind texture information from RGB images. While impressive 3D textured results exist with UV mapping on self-supervised image-based 3D reconstruction methods with genus-0 meshes\citep{li2020self,pavllo2020convolutional}, no attempts have been made to the best of our knowledge to go beyond such 0 order. Finally and since our work is completely agnostic to the 3D mesh reconstruction network, a natural next move would go for the design of a complete self-supervised 3D reconstruction pipeline where our topological refinement module is including. 
+
+\subsection{Conclusion}
+\label{sec:conclusion}
+We proposed a new way to perform topological refinement onto 3D meshes surface by only getting consideration for 2D alpha mask and the modularity of the PyTorch3D rasterization framework. To the best of our knowledge, no attempt has been made in our line of work since both TMN\citep{pan2019deep} and Total3D\citep{nie2020total3dunderstanding} respectively perform faces and edges pruning through 3D-supervised  neural networks. In this way, our work introduced a new research path to address the 3D mesh topology refinement issue. The agnostic design of our method allows any self-supervised image-based 3D reconstruction pipeline - based on the PyTorch3D renderer framework - to leverage the work we presented in this paper to reconstruct topologically complex meshes. We obtained consistent and competitive results from a topological perspective compared to the 3D-based pruning strategy from \citep{pan2019deep}. 
+
+
+\section{Details on Assets used in Chapter~\ref{chapter:epipolarnvs}}
+\label{sec:GradPaint assets}
+
+
+
+Table \ref{tab:linkschap3} (links) and Table \ref{tab:licenceschap3} (licences)
+list the assets we used in this work.
+
+\begin{table*}[h]
+\hspace{\sizeforappendix}
+\footnotesize
+\begin{tabular}{lll}
+\toprule
+\textbf{Asset Name} & \textbf{Link} \\
+\midrule
+% datasets 
+CelebA & https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html \\
+FFHQ &  https://github.com/NVlabs/ffhq-dataset \\
+Places2 &  http://places2.csail.mit.edu/download.html \\
+ImageNet & https://www.image-net.org \\
+COCO & https://cocodataset.org/ \\
+Guided Diffusion & https://github.com/openai/guided-diffusion \\
+Latent Diffusion & https://github.com/CompVis/latent-diffusion \\
+Stable Diffusion & https://github.com/CompVis/stable-diffusion \\
+LaMa & https://github.com/advimman/lama \\
+Palette & https://github.com/Janspiry/Palette-Image-to-Image-Diffusion-Models \\
+LPIPS &  https://github.com/richzhang/PerceptualSimilarity\\
+FID & https://github.com/mseitzer/pytorch-fid \\ % code and moels
+FFHQ pre-trained model & https://github.com/yandex-research/ddpm-segmentation \\ % just model
+RePaint & https://github.com/andreas128/RePaint\\
+MCG & https://github.com/HJ-harry/MCG\_diffusion\\
+\bottomrule
+\end{tabular}
+\caption{List of asset links.}
+\label{tab:linkschap3}
+\end{table*}
+
+
+\begin{table*}[h]
+\hspace{\sizeforappendix}
+\footnotesize
+\begin{tabular}{lll}
+\toprule
+\textbf{Asset Name} & \textbf{Asset type} & \textbf{License} \\
+\midrule
+CelebA & Images & CC BY-NC-SA 4.0 License \\
+FFHQ & Images &  https://github.com/NVlabs/ffhq-dataset/blob/master/LICENSE.txt \\
+Places2 &  Images & Creative Commons Attribution 4.0 International \\
+ImageNet & Images & https://www.image-net.org/download.php \\
+COCO & Images & Creative Commons Attribution 4.0 License \\
+Guided Diffusion & Code and Models & MIT License\\
+Latent Diffusion & Code and Models & MIT License \\
+Stable Diffusion & Code and Model & CreativeML Open RAIL-M\\
+LaMa & Code and Models & Apache License 2.0 \\
+Palette & Code and Models & MIT License \\
+LPIPS & Code and Models & BSD-2-Clause License \\
+FID & Code and Models & Apache-2.0 License \\
+FFHQ pre-trained model & Model & MIT License \\% just model
+RePaint & Code & CC BY-NC-SA 4.0 License\\
+MCG & Code & Apache License 2.0\\
+\bottomrule
+\end{tabular}
+\caption{List of asset licenses.}
+\label{tab:licenceschap3}
+\end{table*}
+
