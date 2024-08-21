@@ -7,10 +7,6 @@
 
 \ifthenelse{\boolean{skipAppendix}}{\endinput}{}
 
-
-
-
-
 \section{AdaptativeSR}
 \subsection{Introduction}
 \label{appendix:adaptativesr-intro}
@@ -215,8 +211,6 @@ We finally also quantitatively confirm the intuited impact of $\tau$ during the 
 
 \subsection{Limitations and further work}
 
-
-
 Our method shows encouraging results in 3D meshes topological refinement through 2D alpha mask considerations but has few remaining limitations. First regarding the thresholding strategy we used to determine whether or not a face should be pruned on the 3D mesh surface. While we require to set a fixed hyperparameter - $\tau$ - in our method as \citep{pan2019deep} did, we align with \citep{nie2020total3dunderstanding} on the importance to rely on local 2D and 3D prior information to propose a clever and more robust thresholding strategy. Moreover, our module might also incorrectly behave on the rendered faces closed to the silhouette boundary edges. 
 
 From a broader work perspective, our method currently relies on alpha masks and thus leaves behind texture information from RGB images. While impressive 3D textured results exist with UV mapping on self-supervised image-based 3D reconstruction methods with genus-0 meshes\citep{li2020self,pavllo2020convolutional}, no attempts have been made to the best of our knowledge to go beyond such 0 order. Finally and since our work is completely agnostic to the 3D mesh reconstruction network, a natural next move would go for the design of a complete self-supervised 3D reconstruction pipeline where our topological refinement module is including. 
@@ -226,69 +220,297 @@ From a broader work perspective, our method currently relies on alpha masks and 
 We proposed a new way to perform topological refinement onto 3D meshes surface by only getting consideration for 2D alpha mask and the modularity of the PyTorch3D rasterization framework. To the best of our knowledge, no attempt has been made in our line of work since both TMN\citep{pan2019deep} and Total3D\citep{nie2020total3dunderstanding} respectively perform faces and edges pruning through 3D-supervised  neural networks. In this way, our work introduced a new research path to address the 3D mesh topology refinement issue. The agnostic design of our method allows any self-supervised image-based 3D reconstruction pipeline - based on the PyTorch3D renderer framework - to leverage the work we presented in this paper to reconstruct topologically complex meshes. We obtained consistent and competitive results from a topological perspective compared to the 3D-based pruning strategy from \citep{pan2019deep}. 
 
 
-\section{Details on Assets used in Chapter~\ref{chapter:epipolarnvs}}
-\label{sec:GradPaint assets}
+
+\section{Additional ressource about Chapter ~\ref{chapter:epipolarnvs} - EpipolarNVS}
+
+\subsection{Inference results}
+We finally present in this last part additional qualitative results from our model, on all the four datasets we have get consideration for in this study. We present for each dataset 8 different scenes or object instances. 
+
+\begin{figure*}[htp!]
+    \begin{center}
+    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_Car.jpg}
+    \end{center}
+     \caption{Visual results from the test ShapeNet ~\cite{Shapenet} \textit{Car} class. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of ~\cite{NVS_skip}, our prediction and the target image $I_t$.}     \label{fig:add_visCar}
+\end{figure*}
+
+\begin{figure*}[htp!]
+    \begin{center}
+    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_Chair.jpg}
+    \end{center}
+     \caption{Visual results from the test ShapeNet ~\cite{Shapenet} \textit{Chair} class. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of ~\cite{NVS_skip}, our prediction and the target image $I_t$.}
+     \label{fig:add_visChair}
+\end{figure*}
+
+\begin{figure*}[htp!]
+    \begin{center}
+    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_Synthia.jpg}
+    \end{center}
+     \caption{Visual results from the Synthia ~\cite{Synthia} test set. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of ~\cite{NVS_skip}, our prediction and the target image $I_t$.}
+     \label{fig:add_visSynthia}
+\end{figure*}
+
+\begin{figure*}[htp!]
+    \begin{center}
+    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_KITTI.jpg}
+    \end{center}
+     \caption{Visual results from the KITTI ~\cite{KITTI} test set. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of ~\cite{NVS_skip}, our prediction and the target image $I_t$.}
+     \label{fig:add_visKITTI}
+\end{figure*}
+
+
+\newpage
+\section{Additional ressource about Chapter ~\ref{chapter:epinerf} - EpiNeRF}
+
+\subsubsection{Pseudo training codes}
+The second fine tuning training stage is trained in a similar way to the first one, even though NeRFeature weights are now frozen to produce target-aligned features. 
+
+We followed the training strategy that SymmNeRF ~\citep{li2022symmnerf} and VisionNeRF ~\citep{lin2023vision} used for $\chi$ and $\Phi$ in both stages and formed batches of 4 images during training, averaged our loss function over 256 rays, and sampled a total of $N_{s}=192$ points along each ray.
+
+
+Pseudo codes related to our entire three-stage training pipeline is provided below.
+The Algorithm \ref{alg:one} thus refers to the first join training of $\chi,\Phi,\Gamma$ networks. Feature from the 2D CNN encoder-decoder $\chi$ are then distilled in Algorithm \ref{alg:two} through a feature radiance fields in 3D. Finally, our complete EpiNeRF architecture is fine-tuned in Algorithm \ref{alg:fourth} thanks to our epipolar-based feature attention mechanism. 
+
+\begin{algorithm}[htbp]
+    \caption{Joint pre-training of CNN $\chi$, NeRF $\Phi$, Hypernetwork $\Gamma$ }\label{alg:one}
+    \SetKwInOut{Input}{input}
+    \SetKwInOut{Parameter}{parameter}
+    \SetKwInOut{Output}{output}
+    \Input{Image pairs $\{I_{s},I_{t}\}$}
+    \Parameter{\textbf{M} symmetry matrix on (YZ) plane}
+    \Output{Trained $\zeta=\{\chi,\Phi,\Gamma\}$} 
+    \medskip
+    \KwResult{$\chi$ trained to produce view-aligned features}
+    $N_{iter},\hspace{.1cm} N_{s},\hspace{.1cm} N_{rays},\hspace{.1cm}b_{s} \gets 500{,}000,\hspace{.1cm} 64,\hspace{.1cm} 256,\hspace{.1cm} 4$ \tcp*[l]{Training hyperparameters}
+    $d_{\text{feat}} \gets 256$\;
+    \While{$j \leq N_{iter}$}{
+        \textcolor{red!50}{[FORWARD PASS]}\;
+         $z_{s}\hspace{.05cm}, \textbf{F}_{s}  \gets \chi(I_{s})$ \hspace{3cm}\textcolor{gray!80}{\# 
+       [bs,$d_{\text{feat}}$] , [bs,H,W,$d_{\text{feat}}$]}\;
+        $\theta = \Gamma(z_{s})$ \tcp*{HyperNetwork $\Gamma$ forward pass}
+        $\mathbf{r}(t) \gets \mathbf{o} + t\mathbf{d}$ \tcp*{Cast ray from target viewpoint}
+            \For{$1 \leq i \leq N_{s}$}{
+            $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$\hspace{3cm}\textcolor{gray!80}{\# 
+      [bs,$N_{rays}$,$N_{s}$]}\; 
+            $x^{(i)}_{symm} \gets \mathbf{M}x^{(i)}$\tcp*{3D samples symmm. (YZ) plane}
+            $f_{s}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}))$ \tcp*{Get source-aligned feature from $F_{s}$}
+            $f_{s,symm}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}_{symm}))$ \tcp*{$f_{s}^{(i)}$ symmetrized counterpart}
+            $f^{(i)} = [f_{s}^{(i)} \mid f_{s,symm}^{(i)}]$\tcp*{Concatenation}
+        
+            $\sigma^{(i)},\mathbf{c}^{(i)} \gets \Phi_{\theta}(x^{(i)},\mathbf{d},f_{s}^{(i)})$ \tcp*{NeRF $\Phi$ forward pass}
+            }
+            $c \gets \sum_{i=1}^{N_{s}} T_{\sigma}^{(i)}(1-\exp(-\delta_{i}\sigma^{(i)}))\textbf{c}^{(i)}$ \textcolor{gray!80}{\# 
+      [bs,$N_{rays}$,3]} \tcp*{Vol. rendering}
+      \;
+      \textcolor{red!50}{[BACKWARD PASS]}\;
+        $\zeta = \{\chi,\Phi,\Gamma\}$ \tcp*{Trainable architectures }
+        $\mathcal{L}_{\zeta}= \sum_{\mathbf{r}\in\mathcal{R}} || c(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2}$\tcp*{Training loss }
+        $\Theta_{\zeta} \gets AdamW(\theta_{\zeta},\nabla_{\theta_{\zeta}} \mathcal{L}_{\zeta})$ \tcp*{Backpropagation - Weights update}
+        }
+    \end{algorithm}
+ 
+
+
+\begin{algorithm}[htbp]
+\caption{Training of NeRFeature $\Psi$ via $\chi$ feature distillation }\label{alg:two}
+\SetKwInOut{Input}{input}
+\SetKwInOut{Arch}{Freezed}
+\SetKwInOut{Output}{output}
+\SetKwInOut{Parameter}{parameter}
+\Input{Image pairs $\{I_{s},I_{t}\}$}
+\Parameter{Intrinsic camera parameters ($3\times3$ matrix) $K$}
+\Arch{CNN encoder/decoder $\chi$ }
+\Output{Trained NeRFeature $\Psi$ } 
+\medskip
+\KwResult{$\Psi$ trained to produce target-aligned features $f_{t} \in \mathbb{R}^{d_{\text{feat}}}$ from source-aligned ones.}
+$N_{iter},\hspace{.1cm} N_{s},\hspace{.1cm} N_{rays},\hspace{.1cm}b_{s} \gets 300.000,\hspace{.1cm} 96,\hspace{.1cm} 256,\hspace{.1cm} 4$ \tcp*[l]{Training hyperparameters}
+$d_{\text{feat}} \gets 256$\;
+\While{j $\leq N_{iter}$}{
+    \textcolor{red!50}{[FORWARD PASS]}\;
+        \textunderscore \hspace{.05cm}, $\textbf{F}_{s}  \gets \chi(I_{s})$ \hspace{3cm}\textcolor{gray!80}{\# 
+  [bs,H,W,$d_{\text{feat}}$]}\;
+         \textunderscore \hspace{.05cm}, $\textbf{F}_{t}  \gets \chi(I_{t})$\;
+         $\mathbf{r}(t) \gets \mathbf{o} + t\mathbf{d}$ \tcp*{Cast ray from target viewpoint}
+        \For{$1 \leq i \leq N_{s}$}{
+        $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$\hspace{3cm}\textcolor{gray!80}{\# 
+  [bs,$N_{rays}$,$N_{s}$]}\; 
+        $f_{s}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}))$ \tcp*{Get source-aligned feature from $F_{s}$}
+        $\rho^{(i)},\mathbf{v}^{(i)}_{t} \gets \Psi(x^{(i)},\mathbf{d},f_{s}^{(i)})$ \tcp*{NeRFeature $\Psi$ forward pass}
+        }
+
+        $f_{t} \gets \sum_{i=1}^{N_{s}} T_{\rho}^{(i)}(1-\exp(-\delta_{i}\rho^{(i)}))\textbf{v}^{(i)}_{t}$ \textcolor{gray!80}{\# 
+  [bs,$N_{rays}$,$d_{\text{feat}}$]} \tcp*[l]{Vol. rendering}
+  \;
+  \textcolor{red!50}{[BACKWARD PASS]}\;
+    $\mathcal{L}_{\Psi}= \sum_{\mathbf{r}\in\mathcal{R}} || f_{t}(\mathbf{r}) - f_{t}^{(GT)}(\mathbf{r}) ||_{2}^{2}$\tcp*{Loss - $f_{t}^{(GT)}(\mathbf{r}) =\mathbf{F}_{t}(K\mathbf{r})$}
+    $\Theta_{\Psi} \gets AdamW(\theta_{\Psi},\nabla_{\theta_{\Psi}} \mathcal{L}_{\Psi})$ \tcp*{Backpropagation - Weights update}
+    }
+\end{algorithm}
+
+
+\begin{algorithm}[htbp]
+\caption{Fine-tunning of the complete EpiNeRF architecture including $\chi,\Gamma,\Phi$}\label{alg:fourth}
+\SetKwInOut{Input}{input}
+\SetKwInOut{Arch}{Freezed}
+\SetKwInOut{PreTrained}{Pre-trained}
+\SetKwInOut{Output}{output}
+\SetKwInOut{Parameter}{parameter}
+\Input{Image pairs $\{I_{s},I_{t}\}$}
+\Parameter{\textbf{M} symmetry matrix on (YZ) plane}
+\Arch{CNN encoder/decoder $\chi$, NeRFeature $\Psi$ }
+\PreTrained{$\zeta = \{\chi,\Phi,\Gamma\}$ (Alg. 1) }
+\Output{$\zeta = \{\chi,\Phi,\Gamma\}$ fine-tunned} 
+\medskip
+\KwResult{Final EpiNeRF model for single-image NVS}
+$N_{iter},\hspace{.1cm} N_{s},\hspace{.1cm} N_{rays},\hspace{.1cm}b_{s} \gets 100.000,\hspace{.1cm} 64,\hspace{.1cm} 256,\hspace{.1cm} 4$ \tcp*[l]{Training hyperparameters}
+$d_{\text{feat}} \gets 256$\;
+\While{j $\leq N_{iter}$}{
+    \textcolor{red!50}{[FORWARD PASS]}\;
+        $z_{s}$ \hspace{.05cm}, $\textbf{F}_{s}  \gets \chi(I_{s})$ \hspace{3cm}\textcolor{gray!80}{\# 
+  [bs,H,W,$d_{\text{feat}}$]} \tcp*[l]{(Alg. 1)}
+         $\mathbf{r}(t) \gets \mathbf{o} + t\mathbf{d}$ \tcp*{Cast ray from target viewpoint}
+         $\theta = \Gamma(z_{s})$ \tcp*{HyperNetwork $\Gamma$ forward pass}
+        \textcolor{orange!50}{[Coarse NeRF $\Phi$]}\;
+        \For{$1 \leq i \leq N_{s}$}{
+        $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$\hspace{3cm}\textcolor{gray!80}{\# 
+  [bs,$N_{rays}$,$N_{s}$]}\tcp*{$t_{i}\sim$\textit{Uniform}}
+        $x^{(i)}_{symm} \gets \mathbf{M}x^{(i)}$\tcp*{3D samples symmm. (YZ) plane}
+        $f^{(i)} = [f_{s}^{(i)} || f_{s,symm}^{(i)}]$\tcp*{Source aligned features concatenation}
+        
+        $f_{t} \gets \Psi(x^{(i)},\mathbf{d},f_{s}^{(i)})$ \tcp*{NeRFeature $\Psi$ forward pass. (Alg. 2)}
+        $s_{a}^{(i)} = \frac{f_{t}^{T}\times f_{s}^{(i)}}{\sqrt{d_{\text{feat}}}}$\textcolor{gray!80}{ $\in$[0,1]} \tcp*{Cross-attention score}
+        $\sigma^{(i)},\mathbf{c}^{(i)} = \Phi_{\theta}(x^{(i)},\mathbf{d},f^{(i)})$ \tcp*{Coarse NeRF $\Phi$ forward pass}
+        $\alpha^{(i)} \gets  \alpha^{(i)}s_{a}^{(i)} + (1-\alpha^{(i)})s_{a}^{(i)^{2}}$ \tcp*{Attention blending}
+        
+        $\omega^{(i)} = T_{\sigma}^{(i)}\alpha^{(i)}$  \tcp*{Attention-corrected weights distribution}
+        }
+        \;
+        $c_{coarse} = \sum_{i=1}^{N_{s}}\omega^{(i)}\textbf{c}^{(i)}$ \tcp*{Coarse volume rendering}
+        $t_{i}\sim F^{-1}(u)$ \tcp*{Impor. samp.
+ of CDF $F(j)=\sum_{i=1}^{j}\omega_{i}$, $u\sim$\textit{Uniform}}
+        \;
+        \textcolor{orange!50}{[Fine NeRF $\Phi$]}\;
+        \For{$1 \leq i \leq N_{s}$}{
+        $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$ 
+        $x^{(i)}_{symm} \gets \mathbf{M}x^{(i)}$\tcp*{3D samples symmm. (YZ) plane}
+        
+        $f^{(i)} = [f_{s}^{(i)} | f_{s,symm}^{(i)}]$\tcp*{Source aligned features concatenation}
+        $\sigma^{(i)},\mathbf{c}^{(i)} = \Phi_{\theta}(x^{(i)},\mathbf{d},f^{(i)})$ \tcp*{Fine NeRF $\Phi$ forward pass}
+        $\omega^{(i)} = T_{\sigma}^{(i)}\alpha^{(i)}$ 
+        }
+        $c_{fine} = \sum_{i=1}^{N_{s}}\omega^{(i)}\textbf{c}^{(i)}$ \tcp*{Fine volume rendering}
+  \;
+  \textcolor{red!50}{[BACKWARD PASS]}\;
+    $\mathcal{L}_{\zeta}= \sum_{\mathbf{r}\in\mathcal{R}} || c_{coarse}(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2} +|| c_{fine}(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2}$\tcp*{Loss}
+    $\Theta_{\zeta} \gets AdamW(\theta_{\zeta},\nabla_{\theta_{\zeta}} \mathcal{L}_{\Psi})$ \tcp*{Backpropagation - Weights update}
+    }
+\end{algorithm}
+\newpage
+\subsection{Additional results - SRN dataset }
+
+We finally present some additional EpiNeRF visuals results. 
+
+Our results on Figures \ref{fig:supp_NVScars} and \ref{fig:supp_NVSchairs} show consistent rendered novel views with fine grained details, even on viewpoints that are far away from the source one. 
+
+\begin{figure}[htp!]
+   \begin{center}
+  \includegraphics[width=\linewidth]{images/epinerf/supp_NVS_Cars.png}
+  \caption{Additional novel views on ShapeNet-SRN \textit{Cars} class. }
+  \label{fig:supp_NVScars}
+  \end{center}
+\end{figure}
+
+
+\begin{figure}[htp!]
+    \begin{center}
+  \includegraphics[width=\linewidth]{images/epinerf/supp_NVS_Chairs.png}
+  \caption{Additional novel views on ShapeNet-SRN \textit{Chairs} class.}
+  \label{fig:supp_NVSchairs}
+  \end{center}
+\end{figure}
+
+\begin{figure*}[h!]
+    \begin{center}
+  \includegraphics[width=\linewidth]{images/epinerf/supp_Cars_additional_inference.png}
+  \caption{Comparison with state-of-the-arts methods on ShapeNet-SRN \textit{Chairs} class.}
+  \label{fig:supp_cars}
+  \end{center}
+\end{figure*}
+
+Figures \ref{fig:supp_cars} and \ref{fig:supp_chairs} finally depict additional side by side renderings comparison with state-of-the-art methods. 
+
+\begin{figure*}[h!]
+    \begin{center}
+  \includegraphics[width=\linewidth]{images/epinerf/supp_Chairs_additional_inference.png}
+  \caption{Comparison with state-of-the-arts methods on ShapeNet-SRN \textit{Chairs} class.}
+  \label{fig:supp_chairs}
+  \end{center}
+\end{figure*}
+
+\clearpage
+
+\subsection{Additional results - Standford Cars dataset }
+We finally evaluate our EpiNeRF architecture on real world images, by focusing on the Stanford Cars dataset \citep{krause20133d}. While raw images have been segmented using state-of-the art segmentation model SAM \citep{kirillov2023segment}, images have also been scaled and centred accordingly to match as closed as possible the ShapeNet-SRN image structure. If such a testing scenario is far from the one our architecture has been trained for, Figure \ref{fig:res_Stanfordcar} shows how EpiNeRF is able to produce sharper results than SymmNeRF \citep{li2022symmnerf}, even without any reliable camera pose information.
+
+
+\begin{figure*}[h!]
+    \begin{center}
+  \includegraphics[width=\linewidth]{images/epinerf/supp_CarsStandford.png}
+  \caption{Novel view synthesis on the few real \textit{Cars} from the Stanford dataset \citep{krause20133d}. Whereas even closed target viewpoint from the source view leads to fuzzy results, our method render sharper results than SymmNeRF \citep{li2022symmnerf}. }
+  \label{fig:res_Stanfordcar}
+  \end{center}
+\end{figure*}
 
 
 
-Table \ref{tab:linkschap3} (links) and Table \ref{tab:licenceschap3} (licences)
-list the assets we used in this work.
+\section{Additional ressource about Chapter ~\ref{chapter:gausssplat} - Gaussian Splatting}
+\subsection{Spherical Harmonics: Definition and construction}
+\label{appendix:gs-sh}
 
-\begin{table*}[h]
-\hspace{\sizeforappendix}
-\footnotesize
-\begin{tabular}{lll}
-\toprule
-\textbf{Asset Name} & \textbf{Link} \\
-\midrule
-% datasets 
-CelebA & https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html \\
-FFHQ &  https://github.com/NVlabs/ffhq-dataset \\
-Places2 &  http://places2.csail.mit.edu/download.html \\
-ImageNet & https://www.image-net.org \\
-COCO & https://cocodataset.org/ \\
-Guided Diffusion & https://github.com/openai/guided-diffusion \\
-Latent Diffusion & https://github.com/CompVis/latent-diffusion \\
-Stable Diffusion & https://github.com/CompVis/stable-diffusion \\
-LaMa & https://github.com/advimman/lama \\
-Palette & https://github.com/Janspiry/Palette-Image-to-Image-Diffusion-Models \\
-LPIPS &  https://github.com/richzhang/PerceptualSimilarity\\
-FID & https://github.com/mseitzer/pytorch-fid \\ % code and moels
-FFHQ pre-trained model & https://github.com/yandex-research/ddpm-segmentation \\ % just model
-RePaint & https://github.com/andreas128/RePaint\\
-MCG & https://github.com/HJ-harry/MCG\_diffusion\\
-\bottomrule
-\end{tabular}
-\caption{List of asset links.}
-\label{tab:linkschap3}
-\end{table*}
+\subsection{3D covariance splatting}
+\label{appendix:cov}
+Let's first get into the equation \ref{eq:gs-3dcov-transfrom} presented in Chapter \ref{chapter:gausssplat}. 
+
+Covariance $\Sigma_{k}$ is expressed in the camera coordinates as $R\Sigma_{k}R^{T}$. Indeed, from a general perspective, for any transformed point $p$ through $W$: 
+
+\begin{equation}
+    \begin{aligned}
+    \text{Var}[Wp] &= \mathbb{E}[(Wp - \mathbb{E}[Wp])(Wp - \mathbb{E}[Wp])^T] \\
+    &= \mathbb{E}[(Rp+t - (R\mathbb{E}[p]+t))(Rp+t - (R\mathbb{E}[p]+t))^T] \\
+    &= \mathbb{E}[R(p - \mathbb{E}[p])(p - \mathbb{E}[p])^T R^T] \\
+    &= R\text{Var}[p]R^T \\
+    \end{aligned}
+    \end{equation}
+
+\subsection{Undetermined positional gradient signs in the ADC}
+\label{appendix:sign-gradient}
+
+As mentioned in Section ~\ref{gs:pixgs-adc}, the per-pixel gradient $\frac{\partial L_{j}}{\partial \mu^{k}_{ndc,x}}$ is expressed as a sum of product terms that might have different signs. 
+
+We thus already expressed such a per-pixel gradient for the x-axis as: 
+
+\begin{equation}
+    \label{eq:perpix-grad}
+    \frac{\partial L_{j}}{\partial \mu^{k}_{ndc,x}} = \sum \limits_{l=1}^{3} \frac{\partial L_{j}}{\partial c_{l}^{j}}\times \frac{\partial c_{l}^{j}}{\partial \alpha_{k}^{j}} \times \frac{\alpha_{k}^{j}}{\partial \mu^{k}_{ndc,x} }
+    \end{equation}
+
+\begin{itemize}
+    
+    \item \textbf{First term} $\frac{\partial L_{j}}{\partial c_{l}^{j}}$ 
+This partial derivative is rather straightforward as $\partial L_{j}$ define the $L_{1}$ loss function between the rendered pixel color and the ground truth one. This first term is thus either set to $+1$ or $-1$ and its sign is undertermined as soon as the difference between predicted and ground truth color can either be positive or negative. 
+
+    \item \textbf{Second term} $\frac{\partial c_{l}^{j}}{\partial \alpha_{k}^{j}}$ 
+The second term has to be developed to fully grasp why it also exists a sign ambiguity in its expression. Accounting on the expression of the rendered color in Equation (\ref{gs-alpha-blending}), such partial derivative can thus be derived as follow. We drop here both the channel  \textit{l} as well as the pixel \textit{j} indexing for sake of clarity.  
+
+\begin{equation}
+    \frac{\partial c}{\partial \alpha_{k}} = c_{k} \times \prod \limits_{p=1}^{k-1}(1 - \alpha_{p}) - \sum \limits_{q=k+1}^{K} c_{q}\alpha_{q}\prod \limits_{p=1,p\neq q}^{q-1}(1 - \alpha_{p})
+\end{equation}
+Whearas both term are positives, their difference made such a term undetermined regarding its sign. 
+
+    \item \textbf{Third term} $\frac{\alpha_{k}^{j}}{\partial \mu^{k}_{ndc,x}}$ 
+\end{itemize}
 
 
-\begin{table*}[h]
-\hspace{\sizeforappendix}
-\footnotesize
-\begin{tabular}{lll}
-\toprule
-\textbf{Asset Name} & \textbf{Asset type} & \textbf{License} \\
-\midrule
-CelebA & Images & CC BY-NC-SA 4.0 License \\
-FFHQ & Images &  https://github.com/NVlabs/ffhq-dataset/blob/master/LICENSE.txt \\
-Places2 &  Images & Creative Commons Attribution 4.0 International \\
-ImageNet & Images & https://www.image-net.org/download.php \\
-COCO & Images & Creative Commons Attribution 4.0 License \\
-Guided Diffusion & Code and Models & MIT License\\
-Latent Diffusion & Code and Models & MIT License \\
-Stable Diffusion & Code and Model & CreativeML Open RAIL-M\\
-LaMa & Code and Models & Apache License 2.0 \\
-Palette & Code and Models & MIT License \\
-LPIPS & Code and Models & BSD-2-Clause License \\
-FID & Code and Models & Apache-2.0 License \\
-FFHQ pre-trained model & Model & MIT License \\% just model
-RePaint & Code & CC BY-NC-SA 4.0 License\\
-MCG & Code & Apache License 2.0\\
-\bottomrule
-\end{tabular}
-\caption{List of asset licenses.}
-\label{tab:licenceschap3}
-\end{table*}
+
+
+
 

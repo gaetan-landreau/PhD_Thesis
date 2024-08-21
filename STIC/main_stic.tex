@@ -62,6 +62,18 @@
 
 \newcommand*{\etal}{\textit{et al.}\@\xspace}
 \newcommand{\sizeforappendix}{-1.5cm}
+\newcommand*{\ie}{\textit{i.e.}\@\xspace}
+
+
+\def\bmvaHangBox#1{%^
+\begin{minipage}[t]{\textwidth}% Top-hanging minipage, will align on
+			       % bottom of first line
+\begin{tabbing} % tabbing so that minipage shrinks to fit
+~\\[-\baselineskip] % Make first line zero-height
+#1 % Include user's text
+\end{tabbing}%^
+\end{minipage}}
+
 
 % bibliography
 \usepackage[style=english]{csquotes}
@@ -89,26 +101,49 @@
 \usepackage{standalone}
 \captionsetup[sub]{font=normalsize}
 
+\usepackage{mathtools}
+
+
 
 % table 
 \usepackage{tabularx}
 \newcommand{\tableheadline}[1]{\multicolumn{1}{c}{\spacedlowsmallcaps{#1}}}
 \usepackage{adjustbox}
 \usepackage{booktabs}
+\usepackage{makecell}
+% red cross and green checked
+\usepackage{pifont}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
 
 
+% code - appendix EpiNeRF
+\definecolor{codegray}{gray}{0.95}
+\newcommand{\code}[1]{\colorbox{codegray}{\texttt{#1}}}
+
+
+\definecolor{darkgreen}{RGB}{0,150,0} % Define a darker green color
+\definecolor{darkred}{RGB}{200,0,0} % Define a darker green color
+\newcommand{\cmark}{\textcolor{darkgreen}{\ding{51}}}%
+\newcommand{\xmark}{\textcolor{darkred}{\ding{55}}}%
+
+
+%\usepackage{commath}
 
 % algorithms
-\usepackage{xcolor}
-\usepackage[linesnumbered,ruled,vlined,algo2e]{algorithm2e}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
 \usepackage{algorithmicx}
 \usepackage{algcompatible}
+\usepackage[linesnumbered,ruled,vlined,algo2e]{algorithm2e}
+\usepackage{xcolor}
+\usepackage{algorithm}
+%\usepackage{algpseudocode}
+%\usepackage[noend]{algpseudocode}
+
 \newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{blue}{#1}}
 \SetCommentSty{mycommfont}
 
-
+\newboolean{skipIntro}
 \newboolean{skipEpipolarNVS}
 \newboolean{skipEpiNeRF}
 \newboolean{skipGauss}
@@ -116,9 +151,10 @@
 \newboolean{skipAppendix}
 
 % By setting this to true, you skip the compiling of some chapters
+\setboolean{skipIntro}{false}
 \setboolean{skipEpipolarNVS}{false}
-\setboolean{skipEpiNeRF}{true}
-\setboolean{skipGauss}{true}
+\setboolean{skipEpiNeRF}{false}
+\setboolean{skipGauss}{false}
 \setboolean{skipConclusion}{false}
 \setboolean{skipAppendix}{false}
 
@@ -316,6 +352,10 @@ Finally, we relax our initial constraint on the single view to get closer to an 
 \tableofcontents
 
 \newgeometry{top=4cm, bottom=4cm, left=4cm, right=4cm}
+
+
+\acresetall
+\input{content/01_intro.tex}
 
 \acresetall
 \input{content/02_epipolarNVS.tex}
