@@ -29,9 +29,7 @@ We present on the Figure \ref{fig:gs-vs-homography-view3} how one of the view fr
 
 Applying such a transformation to the entire scene, frame by frame, would allow to stabilized the $360^{\circ}$ spin properly. However, as soon as a source view cannot depict the whole car, such an image-based method will fail. 
 
-\section{Related work}
 
-Reconstruct the 3D geometry and appearance of a scene given a set of unposed images is a long standing issue for both computer vision and graphics community. While an impressive variety of approaches exists for addressing this issue; from photogrammetry-based or Structure-From-X techniques (where X could stands for \textit{Texture, Shading, Silhouette} etc) to structured-lights ones, pionner work in such area get considerations for stereo vision \cite{marr1976cooperative} via an iterative cooperative algorithm between two views. 
  
 \begin{table}[h!]
   \centering
@@ -39,7 +37,7 @@ Reconstruct the 3D geometry and appearance of a scene given a set of unposed ima
   \begin{tabular}{lcccc}
   \hline
   
-    & Complex Reflexions & Occlusions & Rendering time & \\
+    & Complex Reflections & Occlusions & Rendering time & \\
   \hline
   \hline
   Image warp.  & \xmark & \xmark & \cmark \\
@@ -49,14 +47,9 @@ Reconstruct the 3D geometry and appearance of a scene given a set of unposed ima
   \hline
   \label{tab:gs-comp}
   \end{tabular}
- 
-  \label{tab:propstab}
 \end{table}
 
-
-[ADD COUPLE OF LINES ON NERF-BASED METHOD, BIBLIOGRAPHIC WORK ETC.]
-
-We thus leverage in this section upon latest advances in neural rendering, and especially on GS-based techniques \cite{kerbl20233d}, to build up a $360^{\circ}$ spin stabilisation pipeline for unbounded scenes. As soon as such a 3D reconstruction system primarily aims to live in a production pipeline for an industrial application, presented methods and experiments extensively focused onto a single scene, that could be one from a car dealership client. 
+We thus leverage in this chapter upon latest advances in neural rendering, and especially on GS-based techniques \citep{kerbl20233d}, to build up a $360^{\circ}$ spin stabilisation pipeline for unbounded scenes. As soon as such a 3D reconstruction system primarily aims to live in a production pipeline for an industrial application, presented methods and experiments extensively focused onto a single scene, that could be one from a car dealership client. As presented on Table \ref{tab:gs-comp}, the pipeline we designed on top of the \ac{GS} one allow us to also tackle reflection and transparent surfaces, without hurting training time or inference performances. 
 
 In summary, we build up an improved 3D reconstruction pipeline based on vanilla \ac{GS} architecture that allows to synthetically render a learn 3D scene at novel viewpoints. Our contributions in this section are three-fold: 
 \begin{itemize}
@@ -72,11 +65,11 @@ A first complete overview of the underlying concepts behind GS is presented in t
 \begin{figure*}[htb!]
     \center
   \includegraphics[width=\linewidth]{images/gaussiansplatting/overview_pipeline.png}
-  \caption{\textbf{Gaussian Splatting pipeline overview.} Starting from a sparse 3D point cloud, GS is designed on a lightweight and differentiable pipeline that does not involve any deep or shallow neural architectures. \textit{Original illustration comes from the seminal paper}\cite{kerbl20233d} while our modifications are highlighted in \textcolor{red}{red}.}
+  \caption{\textbf{Gaussian Splatting pipeline overview.} Starting from a sparse 3D point cloud, GS is designed on a lightweight and differentiable pipeline that does not involve any deep or shallow neural architectures. \textit{Original illustration comes from the seminal paper}\citep{kerbl20233d} while our modifications are highlighted in \textcolor{red}{red}.}
   \label{fig:gs-overview}
 \end{figure*}
 
-We present below the key steps that were defined in the original GS seminal work \cite{kerbl20233d}.
+We present below the key steps that were defined in the original GS seminal work \citep{kerbl20233d}.
 
 
 \subsection{Initialization} From a sparse coloured Structure from Motion (SfM)-3D point cloud, referred as $\mathcal{P}\in\mathbb{R}^{N\times(3+3)}$, an associated set of 3D Gaussians $\{\mathcal{G}_{k}|k=1,...,K\}$ is build. Each primitive $\mathcal{G}_{k} $ has therefore an attached set of learnable attributes, defined in the Table \ref{tab:gauss-param}. 
@@ -114,7 +107,7 @@ Considering any point \textit{p} in the world 3D space, the geometry of a primit
   \mathcal{G}_{k}(p) = \exp \left(-\frac{1}{2}(p-\mu^{(k)}_{3D})^{T}(\Sigma^{(k)}_{3D})^{-1}(p-\mu^{(k)}_{3D})\right)
 \end{equation}
 
-\subsection{3D Gaussian projection} The 3D Gaussian parameters are optimised during training phase by only leveraging on an image-based supervision signal. The 3D ellipsoids must thus be render on 2D image plane in a differentiable manner and a corresponding 2D mean and covariance need to be derived from $\mu^{(k)}_{3D}$ and $\Sigma^{(k)}_{3D}$ for each primitive using EWA splatting \cite{zwicker2001ewa}. 
+\subsection{3D Gaussian projection} The 3D Gaussian parameters are optimised during training phase by only leveraging on an image-based supervision signal. The 3D ellipsoids must thus be render on 2D image plane in a differentiable manner and a corresponding 2D mean and covariance need to be derived from $\mu^{(k)}_{3D}$ and $\Sigma^{(k)}_{3D}$ for each primitive using EWA splatting \citep{zwicker2001ewa}. 
 
 Given any viewpoint we want to render, let's denote corresponding world-to-camera extrinsic matrix $W=[R|t]$ and the intrinsic $K$. The gaussian center $\mu^{(k)}_{3D}$ is easily projected in 2D through the perspective projection: 
 
@@ -150,13 +143,13 @@ and in image/ray space as:
 where $J = \partial \mu^{(k)}_{2D} / \partial \mu^{(k)}_{3D}$ is the Jacobian of the mean projection formula (\textit{i.e} the affine approximation of the 3D-2D projection).
 
 
-As explained in \cite{zwicker2001ewa}, one can drop the thrid row and column of  $ \Sigma^{(k)}_{ic}$ to get a 2D covariance matrix, named $\Sigma^{(k)}_{2D}$. Applying a projective transformation to any 3D gaussian primitive $\mathcal{G}_{k}$ lead to another scaled 2D gaussian primitive, termed $g_{k}$: 
+As explained in \citep{zwicker2001ewa}, one can drop the thrid row and column of  $ \Sigma^{(k)}_{ic}$ to get a 2D covariance matrix, named $\Sigma^{(k)}_{2D}$. Applying a projective transformation to any 3D gaussian primitive $\mathcal{G}_{k}$ lead to another scaled 2D gaussian primitive, termed $g_{k}$: 
 
 \begin{equation}
   g_{k}(x) = \exp(-\frac{1}{2}(x-\mu^{(k)}_{2D})^{T}(\Sigma^{(k)}_{2D})^{-1}(p-\mu^{(k)}_{2D}))
 \end{equation}
 
-3DGS seminal work \cite{kerbl20233d} finally performs alpha blending to render a color $\hat{c}(x)$ through: 
+3DGS seminal work \citep{kerbl20233d} finally performs alpha blending to render a color $\hat{c}(x)$ through: 
 
 \begin{equation}
 \label{eq:gs-alpha-blending}
@@ -171,7 +164,7 @@ As explained in \cite{zwicker2001ewa}, one can drop the thrid row and column of 
 where primitive’s depth order are sorted from 1 to K. \newline
 
 \subsection{ADC} 
-As the original SfM point cloud can be extremely sparse, authors from \cite{kerbl20233d} implement both a densification and pruning strategy during training. 
+As the original SfM point cloud can be extremely sparse, authors from \citep{kerbl20233d} implement both a densification and pruning strategy during training. 
 
 The pruning is quite simple yet effective: any 3D gaussian that has an opacity $\alpha$ below a fixed threshold $\epsilon_{\alpha}$ during training is removed from $\mathcal{G}$. 
 
@@ -321,11 +314,9 @@ We present on Algorithm \ref{alg:gs-vh} the pseudo code that allow to generate s
     $P_{VH} \gets \mathbf{setRGBcolor}(P_{3D}^{(refined)},P_{2D},idx_{valid},\mathcal{I})$ \tcp*[l]{Set RGB color to the point cloud through bilinear interpolation}
 \end{algorithm}
 
-\newpage
-
 \subsection{PixGS ADC}
 \label{gs:pixgs-adc}
-Our latest improvement of the vanilla GS framework is directly link to the way gaussians are splited and cloned during the \ac{ADC} procedure. We extensively leverage upon PixGS \cite{zhang2024pixelgs} to change update the densification formulation.  
+Our latest improvement of the vanilla GS framework is directly link to the way gaussians are splited and cloned during the \ac{ADC} procedure. We extensively leverage upon PixGS \citep{zhang2024pixelgs} to change update the densification formulation.  
 
 Original \ac{ADC} strategy has several inner limitations in its current form: 
 \begin{itemize}
@@ -527,7 +518,7 @@ These figures are finally visually confirmed through the exhaustive rendered vie
 
 \section{Limitation and further works}
 
-Wheareas our 3D reconstruction pipeline is able to faithfully render and synthesize novel view at training and \textit{in-distribution} locations, moving to far war away from the original camera path might lead to severe artefact at render time. One of the most known undesired effect for 3D \ac{GS} scene is so-called floater artifact. We illustrate on Figures \ref{fig:floater-limitation} and \ref{fig:floater-removed} this effect\footnote{We illustrate this limitation on another scene since the one we used in this chapter is not that much prone to such needle artifact effect.} and how it can easely handled by narrowing the viewing camera frustrum at inference time. 
+Wheareas our 3D reconstruction pipeline is able to faithfully render and synthesize novel view at training and \textit{in-distribution} locations, moving to far war away from the original camera path might lead to severe artefact at render time. One of the most known undesired effect for 3D \ac{GS} scene is so-called floater artifact. We illustrate on Figures \ref{fig:floater-limitation} and \ref{fig:floater-removed} this effect\footnote{We illustrate this limitation on another scene since the one we used in this chapter is not that much prone to such needle artifact effect.} and how it can easely handled by narrowing the viewing camera frustrum at inference time. These needle artifacts are rendered when $z_{min}=0.2$ since the associated gaussians primitives has the minimal required depth to be taken into account during the rasterization. Increasing the minimal depth to $z_{min}=1.2$ each primitive has to get for being rasterized allow to not render them anymore since they do not fall into the new camera frustrum that has been narrowed. 
 
 \begin{figure*}[htb!]
   \center
@@ -540,29 +531,29 @@ Wheareas our 3D reconstruction pipeline is able to faithfully render and synthes
   \centering
   \begin{subfigure}[b]{0.45\linewidth}
     \includegraphics[width=\linewidth]{images/gaussiansplatting/needle-artifact.png}
-    \caption{\textbf{Rendering with $z_{min}$=0.2} Needle artifacts are rendered since the associated gaussians primitives has the minimal required depth to be taken into account during the rasterization.}
+    \caption{\textbf{Rendering with $z_{min}$=0.2} }
   \end{subfigure}
   \quad % Space between the figures
   \begin{subfigure}[b]{0.45\linewidth}
     \includegraphics[width=\linewidth]{images/gaussiansplatting/needle-free-artifact.png}
-    \caption{\textbf{Rendering $z_{min}$=1.2}The same primitives are not rasterized anymore since they do not fall into the new camera frustrum that has been narrowed. }
+    \caption{\textbf{Rendering $z_{min}$=1.2} }
   \end{subfigure}
   \caption{\textbf{Camera frustrum impact onto needle artifact rendering.} Slightly changing the minimal depth value at which gaussian primitives are rendered or not on the image plane has a huge impact on the final image. Increasing such minimal depth value allows to get ride of those needle primitives when one need to render at a location that is behind the original training location.}
   \label{fig:floater-removed}
 \end{figure}
 
-Beyond the rendering of these unwanted gaussian primitives, rendering at non-training locations remains a challenging tak that would need to be handle during further research. Indeed, only having a sparse set of 36 views to reconstruct a whole scene remains a challenging task: public datasets on which \ac{GS} is trained on for academic purposes often have few hundreds of input images. The figure \ref{fig:nontraining-rendering} illustrates the common case we faced when we need to stabilize the $360^{\circ}$ spin of this scene. The view has to be rendered at a location that is slighly above the original training view. While there are no needle artifacts here, a couple of gaussians are misplaced and missoriented on the back of the car, leading to an blurry and fuzzy result. 
+Beyond the rendering of these unwanted gaussian primitives, rendering at non-training locations remains a challenging tak that would need to be handle during further research. Indeed, only having a sparse set of 36 views to reconstruct a whole scene remains a challenging task: public datasets on which \ac{GS} is trained on for academic purposes often have few hundreds of input images. The figure \ref{fig:nontraining-rendering} illustrates the common case we faced when we need to stabilize the $360^{\circ}$ spin of this scene. The view has to be rendered at a location that is slighly above the original training view. The 3D \ac{GS} scene is extremely well rendered at this training location, at least on the car itself (while the ground and the sky suffer from a lack of gaussian primitives in those over-reconstructed regions). Moving toward the car, at a non-training location, lead to a rendering that is far from being acceptable for an industrial application. Several artifacts and misplaced / misoriented gaussians appeared on the back of the car, leading to an blurry and fuzzy result. 
 
 \begin{figure}[htb!]
   \centering
   \begin{subfigure}[b]{0.45\linewidth}
     \includegraphics[width=\linewidth]{images/gaussiansplatting/00023-unstabilized.png}
-    \caption{\textbf{Rendering at training location (unstabilized).} The 3D \ac{GS} scene is extremely well rendered at this training location, at least on the car itself (while the ground and the sky suffer from a lack of gaussian primitives in those over-reconstructed regions).}
+    \caption{\textbf{Rendering at training location (unstabilized).}}
   \end{subfigure}
   \quad % Space between the figures
   \begin{subfigure}[b]{0.45\linewidth}
     \includegraphics[width=\linewidth]{images/gaussiansplatting/00023-stabilized.png}
-    \caption{\textbf{Rendering at non-training location (stabilized).} Moving toward the car, at a non-training location, lead to a rendering that is far from being acceptable for an industrial application. Several artifacts and misplaced / misoriented gaussians appeared on the back of the car. }
+    \caption{\textbf{Rendering at non-training location (stabilized).}}
   \end{subfigure}
   \caption{\textbf{Main limitation for $360^{\circ}$ spin stabilization.} While a rendering at a training location gives appealing result, moving ahead and try to render the same scene remains a challenging case that is for know unadressed.}
   \label{fig:nontraining-rendering}
