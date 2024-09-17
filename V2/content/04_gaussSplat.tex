@@ -241,7 +241,7 @@ This novel view-dependency opacity allow the pipeline we build specifically for 
 
 The alpha-blending equation, introduced in equation (\ref{eq:gs-alpha-blending}) remains unchanged to get the final rendered pixel color.
 
-Such a lightweight MLP $\Phi$ thus highly improve the light reflections and windows transparency issue we often encounter in our car scenes. In-depth quantitative figures as well as visual insights on the usefulness of such an opacity view dependency are presented in detail in section \ref{sec:exp}. 
+Such a lightweight MLP $\Phi$ thus highly improve the light reflections and windows transparency issue we often encounter in our car scenes. In-depth quantitative figures as well as visual insights on the usefulness of such an opacity view dependency are presented in detail in section \ref{sec:exp-gs}. 
 
 \subsection{Visual Hull}
 
@@ -388,7 +388,7 @@ PixelGS re-weighting strategy is illustrated on Figure \ref{fig:pixgs-adc}.
 
 
 \section{Experiments}
-\label{sec:exp}
+\label{sec:exp-gs}
 
 As our work has to be frame as a potential industrial system, all presented results come from the 36 views scene depicted on Figure \ref{fig:all_views}. 
 \begin{figure*}[htpb!]
@@ -517,6 +517,7 @@ These figures are finally visually confirmed through the exhaustive rendered vie
 \end{figure*}
 
 \section{Limitation and further works}
+\label{sec:gs-limitation}
 
 Wheareas our 3D reconstruction pipeline is able to faithfully render and synthesize novel view at training and \textit{in-distribution} locations, moving to far war away from the original camera path might lead to severe artefact at render time. One of the most known undesired effect for 3D \ac{GS} scene is so-called floater artifact. We illustrate on Figures \ref{fig:floater-limitation} and \ref{fig:floater-removed} this effect\footnote{We illustrate this limitation on another scene since the one we used in this chapter is not that much prone to such needle artifact effect.} and how it can easely handled by narrowing the viewing camera frustrum at inference time. These needle artifacts are rendered when $z_{min}=0.2$ since the associated gaussians primitives has the minimal required depth to be taken into account during the rasterization. Increasing the minimal depth to $z_{min}=1.2$ each primitive has to get for being rasterized allow to not render them anymore since they do not fall into the new camera frustrum that has been narrowed. 
 
