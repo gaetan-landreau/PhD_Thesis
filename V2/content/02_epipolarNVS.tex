@@ -117,7 +117,7 @@ Only non-null pixel values are sampled from $\textbf{G}_{r}$ in our encoding str
 \includegraphics[width=.26\textwidth]{images/epipolarnvs/It_ECML.png}\hspace{.5cm}%\hfill
 \includegraphics[width=.26\textwidth]{images/epipolarnvs/Est_ECML.jpg}
 \end{center}
-\caption{From left to right: Source image $I_s$, Target image $I_t$ and the corresponding $E_{s\xrightarrow{}t}$. From the ShapeNet \citep{chang2015shapenet} \textit{chair} class. Pixel locations sampled from $\textbf{G}_{25}$ are highlighted through red circles.}
+\caption{\textbf{Pair of source/target image with our encoded transformation.} From left to right: Source image $I_s$, Target image $I_t$ and the corresponding $E_{s\xrightarrow{}t}$. From the ShapeNet \citep{chang2015shapenet} \textit{chair} class. Pixel locations sampled from $\textbf{G}_{25}$ are highlighted through red circles.}
 \label{fig:examplePoseEncoded}
 \end{figure}
 
@@ -162,7 +162,7 @@ Such properties allow the network to better apprehend the direction of the motio
       \includegraphics[width=\linewidth]{images/epipolarnvs/XYplaneMotionKITTI01.png}
       \caption{Sequence \textbf{01}}
     \end{subfigure}
-    \caption{We illustrate below the overall trajectory in the (XZ) plane of the car that drove across German's street to acquire the 00 and 01 sequences of the KITTI ~\citep{geiger2012we} dataset.}
+    \caption{\textbf{Car displacement in (XY) plane.} We illustrate below the overall trajectory in the (XZ) plane of the car that drove across German's street to acquire the 00 and 01 sequences of the KITTI ~\citep{geiger2012we} dataset.}
     \label{fig:test}
   \end{figure}
 
@@ -180,7 +180,7 @@ The overall network architecture is presented in Figure \ref{fig:architecture}. 
   \begin{center}
   \includegraphics[width=\textwidth]{images/epipolarnvs/NetworkArchitecture.png}
   \end{center}
-  \caption{General overview of our architecture. EpipolarNVS takes as inputs both $I_s$ and $E_{s\xrightarrow{}t}$ through two distinct encoders that produce feature vectors that are concatenated before being fed to the decoder. The neural network structure also leverages on the hard flow attention connections introduced in \citep{kim2020novel}.}
+  \caption{\textbf{General overview of our architecture.} EpipolarNVS takes as inputs both $I_s$ and $E_{s\xrightarrow{}t}$ through two distinct encoders that produce feature vectors that are concatenated before being fed to the decoder. The neural network structure also leverages on the hard flow attention connections introduced in \citep{kim2020novel}.}
   \label{fig:architecture}
 \end{figure}
 
@@ -225,9 +225,9 @@ Because \citep{kim2020novel} integrates the camera pose as discretized bins, the
 
 \begin{figure*}[h!]
     \begin{center}
-    \includegraphics[width=.8\textwidth]{images/epipolarnvs/resultsFinal_BMVC.jpg}
+    \includegraphics[width=\textwidth]{images/epipolarnvs/resultsFinal_BMVC.jpg}
     \end{center}
-     \caption{Inference results on all the four datasets considered. $E_{s\xrightarrow{}t}$ encoded transformation have been obtained with $\textbf{G}_{15}$. From left to right: the source image  $I_s$, $E_{s\xrightarrow{}t}$, \citep{kim2020novel} prediction, our prediction, the target image $I_t$. On overall, our method predicts more consistent results since complete pose transformation has been fed to the network contrary to the concurrent work from \citep{kim2020novel}. }
+     \caption{\textbf{Novel view synthesis on the four considered datasets.} Encoded transformation $E_{s\xrightarrow{}t}$ have been obtained with $\textbf{G}_{15}$. From left to right: the source image  $I_s$, $E_{s\xrightarrow{}t}$, \citep{kim2020novel} prediction, our prediction, the target image $I_t$. On overall, our method predicts more consistent results since complete pose transformation has been fed to the network contrary to the concurrent work from \citep{kim2020novel}. }
      \label{fig:res_all}
 \end{figure*}
 
@@ -237,9 +237,9 @@ Results of our method synthesised on real-world datasets are depicted on third (
 While results presented on Figure \ref{fig:res_all} for real world datasets focus on the overall motion that occurred, we highlight on Figure \ref{fig:res_all2} in which extent high-frequency details can be retrieved by our model. The global motion is quite properly handled by \citep{kim2020novel} too, but our method manages to better retrieved tiny details structure for the paintings on the ground. The Spectral loss we used during training helped the network to handle these high frequencies. 
 \begin{figure*}[h!]
     \begin{center}
-    \includegraphics[width=.8\textwidth]{images/epipolarnvs/rebbutal_KITTI_3.jpg}
+    \includegraphics[width=\textwidth]{images/epipolarnvs/rebbutal_KITTI_3.jpg}
     \end{center}
-     \caption{From left to right: the source image  $I_s$, \citep{kim2020novel} prediction, our prediction, the target image $I_t$. Painting on the ground are better reconstructed in our method compared to \citep{kim2020novel}.}
+     \caption{\textbf{Addional inference results on KITTI dataset.} From left to right: the source image  $I_s$, \citep{kim2020novel} prediction, our prediction, the target image $I_t$. Painting on the ground are better reconstructed in our method compared to \citep{kim2020novel}.}
      \label{fig:res_all2}
 \end{figure*}
 
@@ -335,7 +335,7 @@ As shown in Table \ref{tab:compExtended}, and considering the neural network arc
 \includegraphics[width=.45\textwidth]{images/epipolarnvs/ablationSynthia.png} \hfill
 \includegraphics[width=.45\textwidth]{images/epipolarnvs/ablationSynthia2.png}
 \end{center}
-\caption{Source fixed view $I_s$ (top row, Left) and three consecutive target views (bottom row, Left) from Synthia \cite{ros2016synthia} test set. - Predictions made by our model with the encoded pose (top row,Right) and the extended encoded pose strategy (bottom row,Right). Adding an additional channel in our extended pose encoding allows the network to better apprehend the motion that occurred in Synthia \cite{ros2016synthia} and KITTI \cite{geiger2012we}. The grid $\textbf{G}_{15}$ has been used in both cases.}
+\caption{\textbf{Impact of a fourth channel into our encoding scheme.} Source fixed view $I_s$ (top row, Left) and three consecutive target views (bottom row, Left) from Synthia \cite{ros2016synthia} test set. - Predictions made by our model with the encoded pose (top row,Right) and the extended encoded pose strategy (bottom row,Right). Adding an additional channel in our extended pose encoding allows the network to better apprehend the motion that occurred in Synthia \cite{ros2016synthia} and KITTI \cite{geiger2012we}. The grid $\textbf{G}_{15}$ has been used in both cases.}
 \label{fig:ablaSynthia}
 \end{figure}
 We highlight on Figure \ref{fig:ablaSynthia} the positive influence this last channel has on the our model. 
@@ -346,6 +346,8 @@ While the manhole cover (disappearing on the target views sequence) is entirely 
 
 A second ablation study has been conducted to highlight to which extent the spectral loss function positively impacts the training of our model architecture. 
 \begin{table}[h!]
+    \caption{\textbf{Ablation study.} Impact of the Spectral loss function over the four differerents datasets EpipolarNVS has been trained and tested on.}
+    \label{tab:spectral}
 \begin{center}
 \begin{tabular}{@{}||lllllllllllllllll@{}}
   \toprule
@@ -369,15 +371,13 @@ A second ablation study has been conducted to highlight to which extent the spec
 
 \end{tabular}
 \end{center}
-\caption{Impact of the Spectral loss function.}
-\label{tab:spectral}
 \end{table}
 
 As seen in Table \ref{tab:spectral}, constraining the training on the high frequencies helps the network to generate more realistic novel views. Such quantitative improvement is visually confirmed in Figure \ref{fig:spectral_res} where the same object instance is generated through both configurations with the ShapeNet \textit{Car} class.\newline 
 
 \begin{figure*}[h!]
     \begin{center}
-    \includegraphics[width=.5\textwidth]{images/epipolarnvs/spectralCar.jpg}
+    \includegraphics[width=\textwidth]{images/epipolarnvs/spectralCar.jpg}
     \end{center}
      \caption{Inference results from the ShapeNet ~\cite{chang2015shapenet} \textit{Car} test set. From the top row to the bottom one: Source images  $I_s$, Ours prediction with $\mathcal{L}_{1}$ only at training, Ours prediction with  $\mathcal{L}_{spectral} + \mathcal{L}_{1}$ at training, Ground truth - Target images $I_t$. From a general perspective, tires and windows are better retrieved at inference time when high frequencies have been constrained during training.}
      \label{fig:spectral_res}
@@ -391,7 +391,7 @@ We present a third ablation study to get some knowledge regarding the granularit
     \caption{\textbf{Ablation comparison.} Sampling strategy influence over the real-world datasets Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we}. Best results are highlighted in \colorbox{red!25}{red}. }
     \label{tab:3}
     \begin{center}%\centering%
-    \begin{adjustbox}{width =.8\linewidth}
+    \begin{adjustbox}{width =\linewidth}
     \begin{tabular}[h]{c||ccccc}
     \hline
       Method & \multicolumn{2}{c}{Synthia} & \multicolumn{2}{c}{KITTI} \\
