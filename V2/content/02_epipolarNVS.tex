@@ -244,59 +244,61 @@ While results presented on Figure \ref{fig:res_all} for real world datasets focu
 \end{figure*}
 
   
-\subsection{Quantitative Results }
+\subsection{Quantitative Results}
 
 We report some performance results over the four datasets we get consideration for. Tables \ref{tab:1} and \ref{tab:2} respectively summarise the scores for the synthetic ShapeNet \citep{chang2015shapenet} dataset and the real-scene ones (Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we}). While our method outperforms concurrent works on MAE, we reach extremely competitive results with the SSIM metric too, since only \citep{sun2018multiview} gets better scores. \newline
 
 However, we emphasise on a crucial aspect regarding the reported scores. Only our method and the one from \citep{kim2020novel} has been retrained with the extended and challenging datasets that we presented earlier. Results from remaining works \citep{tatarchenko2015single,zhou2016view,park2017transformation,sun2018multiview,} are the ones that were originally published by authors. 
-\begin{table}[htp!]
-\begin{center}
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}[h]{c||ccccccc}
-\hline
-Modality & Method & \multicolumn{3}{c}{Car} & \multicolumn{3}{c}{Chair} \\
- & & $MAE$ ($\downarrow$) & SSIM ($\uparrow$) & PSNR ($\uparrow$) & $MAE$ ($\downarrow$) & SSIM ($\uparrow$) & PSNR ($\uparrow$) \\
-\hline
-\textit{Multi-views} &\citep{sun2018multiview} & $0.078$ & ${0.935}$ & - & $0.141$ & ${0.911}$ & -\\
-\hline
-& \citep{tatarchenko2015single} & $0.139$ & $0.875$ & - & $0.223$ & $0.882$ & -\\
-&\citep{zhou2016view} & $0.148$ & $0.877$ & - & $0.229$ & $0.871$ & - \\
-\textit{Single-view} &\citep{park2017transformation} & $0.119$ & $\underline{0.913}$ & - & $0.202$ & 0.889& -\\
-& \citep{yu2021pixelnerf} & - & 0.900 & \underline{23.17} & - & $\mathbf{0.911}$ & $\mathbf{23.72}$ \\
-&\citep{kim2020novel} & $\underline{0.026}$ & $0.892$ & 21.18 & $\underline{0.045}$ & $0.865$ & 17.89\\
-& Ours & $\mathbf{0.016}$ & $\mathbf{0.928}$ & $\mathbf{24.23}$ & $\mathbf{0.032}$ & \underline{0.901}& \underline{19.55}\\
-\hline \hline
 
-\end{tabular}
-\end{adjustbox}
-\end{center}
-\captionof{table}{Performance on ShapeNet \citep{chang2015shapenet}. Best scores for the single-view modality are highlighted in bold while second best ones are underlined.}
-\label{tab:1}
-\end{table}
+\begin{table}[h!]
+    \caption{\textbf{Quantitative results.} Comparisons against state-of-the-art methods on the category specific \textit{Chairs} and \textit{Cars} classes from the ShapeNet dataset \citep{chang2015shapenet}. Best results are highlighted in \colorbox{red!25}{red}, second ones in \colorbox{orange!25}{orange} and third ones in \colorbox{yellow!25}{yellow}. }
+    \label{tab:1}
+    \begin{center}%\centering%
+    \begin{adjustbox}{width = \linewidth}
+    \begin{tabular}[h]{c||cccccccc}
+    \hline
+     Modality & Method & \multicolumn{3}{c}{Car} & \multicolumn{3}{c}{Chair} \\
+     & &  MAE ($\downarrow$) & SSIM ($\uparrow$) & PSNR ($\uparrow$) & MAE ($\downarrow$) & SSIM ($\uparrow$) & PSNR ($\uparrow$)\\
+    \hline
+    Multi-view & \citep{sun2018multiview}& 0.078 & 0.935 & - & 0.141 & 0.911 & - \\
+    \hline
+     & \citep{tatarchenko2015single} & 0.139 & 0.875 & - & 0.223 & 0.882 & -\\
+    &  \citep{zhou2016view} & 0.148 & 0.877 & - & 0.229 & 0.871 & - \\
+    Single-view &  \citep{park2017transformation} & \cellcolor{yellow!25}0.119 & \cellcolor{orange!25}0.913 & - & \cellcolor{yellow!25}0.202 & \cellcolor{yellow!25}0.889& -\\
+     &  \citep{yu2021pixelnerf} & - & \cellcolor{yellow!25}0.900 & \cellcolor{orange!25}23.17 & - & \cellcolor{red!25}0.911 & \cellcolor{red!25}23.72 \\
+     &  \citep{kim2020novel} & \cellcolor{orange!25}0.026 & 0.892 & \cellcolor{yellow!25}21.18 & \cellcolor{orange!25}0.045 & 0.865 & \cellcolor{yellow!25}17.89 \\
+     & Ours & \cellcolor{red!25}0.016 & \cellcolor{red!25}0.928 & \cellcolor{red!25}24.23 & \cellcolor{red!25}0.032 & \cellcolor{orange!25}0.901 & \cellcolor{orange!25}19.55 \\
+     
+    \hline 
+    \end{tabular}
+    \end{adjustbox}
+    \end{center}
+    \end{table}
 
  Results on Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} are reported on Table \ref{tab:2} and are competitive with current state of the art methods. We emphasize that our method (as well as \citep{kim2020novel}) was trained on more complex scenarios from an image-content perspective: both Synthia and KITTI images were resized to $256\times 256$ without any center-cropping operation (which allows to discard the most challenging elements from the scenes). 
 
-\begin{table}[htp!]
-\begin{center}
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}[h]{c||ccccccc}
-\hline
-Modality &Method & \multicolumn{3}{c}{Synthia} & \multicolumn{3}{c}{KITTI} \\
-& & $MAE$ ($\downarrow$) & SSIM ($\uparrow$)& PNSR ($\uparrow$) & $MAE$ ($\downarrow$) & SSIM ($\uparrow$) & PNSR ($\uparrow$)\\
-\hline
-\textit{Multi-views}&\citep{sun2018multiview} & $0.118$ & $0.737$ & - &  $0.163$ & $0.691$ & - \\
-\hline
-&\citep{tatarchenko2015single} & $0.175$ & $0.612$ & - &  $0.295$ & $0.505$ &  - \\
-\textit{Single-view} & \citep{zhou2016view} & $0.221$ & $\mathbf{0.636}$ & -  & $0.418$ & $0.504$ & - \\
- & \citep{kim2020novel}  & $\underline{0.065}$ & $\underline{0.632}$ & $\mathbf{19.81}$ & $\underline{0.087}$ & $\underline{0.602}$ & \underline{16.84} \\
-& Ours & $\mathbf{0.065}$ & $0.631$ & \underline{19.44} & $\mathbf{0.082}$ & $\mathbf{0.609}$ & $\mathbf{17.11}$ \\
-\hline\hline
-\end{tabular}
-\end{adjustbox}
-\end{center}
-\captionof{table}{Performance on Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we}. Best scores for the single-view modality are highlighted in bold while second best ones are underlined.}
-\label{tab:2}
-\end{table}
+\begin{table}[h!]
+    \caption{\textbf{Quantitative results.} Comparisons against state-of-the-art methods Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} datasets. Best results are highlighted in \colorbox{red!25}{red}, second ones in \colorbox{orange!25}{orange} and third ones in \colorbox{yellow!25}{yellow}. }
+    \label{tab:2}
+    \begin{center}%\centering%
+    \begin{adjustbox}{width = \linewidth}
+    \begin{tabular}[h]{c||cccccccc}
+    \hline
+     Modality & Method & \multicolumn{3}{c}{Synthia} & \multicolumn{3}{c}{KITTI} \\
+     & &  MAE ($\downarrow$) & SSIM ($\uparrow$) & PSNR ($\uparrow$) & MAE ($\downarrow$) & SSIM ($\uparrow$) & PSNR ($\uparrow$)\\
+    \hline
+    Multi-view & \citep{sun2018multiview}& 0.118 & 0.737 & - & 0.163 & 0.691 & - \\
+    \hline
+     & \citep{tatarchenko2015single} & \cellcolor{orange!25}0.175 & 0.612 & - & \cellcolor{yellow!25}0.295 & \cellcolor{yellow!25}0.505 & -\\
+     Single-view &  \citep{zhou2016view} & \cellcolor{yellow!25}0.221 & \cellcolor{red!25}0.636 & - & 0.418 & 0.504 & - \\
+     &  \citep{kim2020novel} & \cellcolor{red!25}0.065 & \cellcolor{orange!25}0.632 &  \cellcolor{red!25}19.81 & \cellcolor{orange!25}0.087 & \cellcolor{orange!25}0.602 & \cellcolor{orange!25}16.84 \\
+     & Ours & \cellcolor{red!25}0.065 & \cellcolor{yellow!25}0.631 & \cellcolor{orange!25}19.44 & \cellcolor{red!25}0.082 & \cellcolor{red!25}0.609 & \cellcolor{red!25}17.11 \\
+    \hline 
+    \end{tabular}
+    \end{adjustbox}
+    \end{center}
+    \end{table}
+
 
 
 \subsection{Ablation studies}
@@ -308,20 +310,22 @@ We conduct ablation studies to highlight and understand how some meaningful prop
 Dealing with real-world scene datasets and the maximum 10 frames difference that could occurred between the source and the target view is one of the most tricky scenarios for single-image novel view synthesis. We thus conduct a first ablation study to validate the intuition behind this additional channel that encodes the relative largest motion in the (XZ) plane. Please note that the Spectral loss has not been added in this ablation study, leading to slightly different results from the original reported ones. 
 
 \begin{table}[h!]
-\begin{center}
-\begin{tabular}{ccccc}
-\hline
-Method & \multicolumn{2}{c}{Synthia} & \multicolumn{2}{c}{KITTI} \\
- & $MAE$ ($\downarrow$) & SSIM ($\uparrow$) & $MAE$ ($\downarrow$) & SSIM ($\uparrow$) \\
-\hline
-3-\textit{channels} encoding &  0.077 & 0.602  & 0.109  & 0.576 \\ \hline
-4-\textit{channels} encoding &  \textbf{0.066} &  \textbf{0.622} &  \textbf{0.086} &  \textbf{0.605}  \\ \hline
-\hline
-\end{tabular}
-\end{center}
-\caption{Benefit on Synthia ~\cite{ros2016synthia} and KITTI ~\cite{geiger2012we} datasets of our extended encoding strategy. Adding such fourth channel helps the network to better perform on real-world datasets. The grid $\textbf{G}_{15}$ has been used in both cases.}
-\label{tab:compExtended}
-\end{table}
+    \caption{\textbf{Ablation comparison.} Benefit on Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} datasets of our extended encoding strategy. Adding such fourth channel helps the network to better perform on real-world datasets. The grid $\textbf{G}_{15}$ has been used in both cases. Best results are highlighted in \colorbox{red!25}{red}. }
+    \label{tab:compExtended}
+    \begin{center}%\centering%
+    \begin{adjustbox}{width =.8\linewidth}
+    \begin{tabular}[h]{c||ccccc}
+    \hline
+      Method & \multicolumn{2}{c}{Synthia} & \multicolumn{2}{c}{KITTI} \\
+      &  MAE ($\downarrow$) & SSIM ($\uparrow$) & MAE ($\downarrow$) & SSIM ($\uparrow$) \\
+    \hline
+    3-\textit{channels} encoding & 0.077 & 0.602 & 0.109 & 0.576  \\
+    4-\textit{channels} encoding & \cellcolor{red!25}0.066 & \cellcolor{red!25}0.622 & \cellcolor{red!25}0.086 & \cellcolor{red!25}0.605 \\
+    \hline 
+    \end{tabular}
+    \end{adjustbox}
+    \end{center}
+    \end{table}
 
 As shown in Table \ref{tab:compExtended}, and considering the neural network architecture as fixed, the fourth channel we have added to our representation $E_{s\xrightarrow{}t}$ clearly helps the network to perform better in the task it has been trained for.  The SSIM gained more than 2 points on average while the MAE significantly decreased (by almost 20\% on average for the two datasets) to reach competitive results with \cite{kim2020novel}. 
 
@@ -343,26 +347,26 @@ While the manhole cover (disappearing on the target views sequence) is entirely 
 A second ablation study has been conducted to highlight to which extent the spectral loss function positively impacts the training of our model architecture. 
 \begin{table}[h!]
 \begin{center}
-\begin{tabular}{@{}lllllllllllllllll@{}}
+\begin{tabular}{@{}||lllllllllllllllll@{}}
   \toprule
   Datasets & Metrics  &$\mathcal{L}_{1}$ only  &  $\mathcal{L}_{1}+\mathcal{L}_{spectral}$ &   \\
   \midrule
-  \multirow{3}{*}{\textbf{ShapeNet - Car}} & L1 ($\downarrow$) &\hfil 0.019 & \hfil\textbf{0.016} \\
-  & SSIM ($\uparrow$) & \hfil0.912 & \hfil\textbf{0.928}\\
-  & PSNR ($\uparrow$)& \hfil22.61 & \hfil\textbf{24.23}\\
+  \multirow{3}{*}{ShapeNet - Car \citep{chang2015shapenet}} & MAE ($\downarrow$) &\hfil 0.019 & \hfil  \cellcolor{red!25}0.016 \\
+  & SSIM ($\uparrow$) & \hfil0.912 & \hfil \cellcolor{red!25}0.928\\
+  & PSNR ($\uparrow$)& \hfil22.61 & \hfil \cellcolor{red!25}24.23\\
   \midrule
-  \multirow{3}{*}{\textbf{ShapeNet - Chair}} & L1 ($\downarrow$) & \hfil 0.037 & \hfil \textbf{0.032}\\
-  & SSIM ($\uparrow$)&\hfil 0.892 & \hfil \textbf{0.901} \\
-  & PSNR ($\uparrow$) & \hfil 19.19 & \hfil \textbf{19.55} \\
+  \multirow{3}{*}{ShapeNet - Chair \citep{chang2015shapenet}} & MAE ($\downarrow$) & \hfil 0.037 & \hfil \cellcolor{red!25}0.032\\
+  & SSIM ($\uparrow$)&\hfil 0.892 & \hfil \cellcolor{red!25}0.901 \\
+  & PSNR ($\uparrow$) & \hfil 19.19 & \hfil \cellcolor{red!25}19.55 \\
   \midrule
-  \multirow{3}{*}{\textbf{Synthia}} & L1 ($\downarrow$)& \hfil 0.066 & \hfil \textbf{0.065}\\
-  & SSIM ($\uparrow$)& \hfil 0.622 & \hfil \textbf{0.631} \\
-  & PSNR ($\uparrow$)& \hfil 19.24 & \hfil \textbf{19.44}\\
+  \multirow{3}{*}{Synthia \citep{ros2016synthia}} & MAE ($\downarrow$)& \hfil 0.066 & \hfil \cellcolor{red!25}0.065\\
+  & SSIM ($\uparrow$)& \hfil 0.622 & \hfil \cellcolor{red!25}0.631 \\
+  & PSNR ($\uparrow$)& \hfil 19.24 & \hfil \cellcolor{red!25}19.44\\
   \midrule
-  \multirow{3}{*}{\textbf{KITTI}} & L1 ($\downarrow$)& \hfil 0.086 & \hfil \textbf{0.082}\\
-  & SSIM ($\uparrow$)& \hfil 0.605 & \hfil \textbf{0.609} \\
-  & PSNR ($\uparrow$)& \hfil 16.99 & \hfil \textbf{17.11}\\\hline
-\hline
+  \multirow{3}{*}{KITTI \citep{geiger2012we}} & MAE ($\downarrow$)& \hfil 0.086 & \hfil \cellcolor{red!25}0.082\\
+  & SSIM ($\uparrow$)& \hfil 0.605 & \hfil \cellcolor{red!25}0.609 \\
+  & PSNR ($\uparrow$)& \hfil 16.99 & \hfil \cellcolor{red!25}17.11\\\hline
+
 \end{tabular}
 \end{center}
 \caption{Impact of the Spectral loss function.}
@@ -379,27 +383,30 @@ As seen in Table \ref{tab:spectral}, constraining the training on the high frequ
      \label{fig:spectral_res}
 \end{figure*}
 
-\newpage\textbf{Discrete grid $\textbf{G}_{r}$ granularity and sampling strategy}
+\textbf{Discrete grid $\textbf{G}_{r}$ granularity and sampling strategy}
 
 We present a third ablation study to get some knowledge regarding the granularity our grid sampling needs. Beyond the three grids we tested out, we also consider a random sampling strategy, that consists of sampling a fixed number (corresponding to 1\% of pixels for a $256\times 256$ image) of locations. Table \ref{tab:3} summarises the different results of this experiment on the real-world datasets.
+
 \begin{table}[h!]
-\begin{center}
-\begin{tabular}{ccccc}
-\hline
-Method & \multicolumn{2}{c}{Synthia} & \multicolumn{2}{c}{KITTI} \\
- & $MAE$ ($\downarrow$) & SSIM ($\uparrow$) & $MAE$ ($\downarrow$) & SSIM ($\uparrow$) \\
-\hline
-\makecell{ Random Sampling \\ \footnotesize{(655 pix. sampled)}}& \textbf{0.0816} & \textbf{0.593} & 0.1290 & 0.549   \\ \hline
+    \caption{\textbf{Ablation comparison.} Sampling strategy influence over the real-world datasets Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we}. Best results are highlighted in \colorbox{red!25}{red}. }
+    \label{tab:3}
+    \begin{center}%\centering%
+    \begin{adjustbox}{width =.8\linewidth}
+    \begin{tabular}[h]{c||ccccc}
+    \hline
+      Method & \multicolumn{2}{c}{Synthia} & \multicolumn{2}{c}{KITTI} \\
+      &  MAE ($\downarrow$) & SSIM ($\uparrow$) & MAE ($\downarrow$) & SSIM ($\uparrow$) \\
+    \hline
+    \makecell{ Random Sampling \\ \footnotesize{(655 pix. sampled)}}& \cellcolor{red!25}0.0816 & \cellcolor{red!25}0.593 & 0.1290 & 0.549   \\ \hline
 \makecell{$\textbf{G}_{15}$ grid \\ \footnotesize{(225 pix. sampled)}} & 0.0823 & 0.589 & 0.1222 & 0.562   \\ \hline
 \makecell{$\textbf{G}_{20}$ grid \\ \footnotesize{(400 pix. sampled)}} & 0.0857 & 0.576 & 0.1241 & 0.560  \\ \hline
-\makecell{$\textbf{G}_{25}$ grid \\ \footnotesize{(625 pix. sampled)}} & 0.0908 & 0.575 & \textbf{0.1217} & \textbf{0.563}   \\ \hline
-\hline
-\end{tabular}
-\end{center}
-\caption{Sampling strategy influence over the real-world datasets Synthia 
- \cite{ros2016synthia} and KITTI \cite{geiger2012we}.}
-\label{tab:3}
-\end{table}
+\makecell{$\textbf{G}_{25}$ grid \\ \footnotesize{(625 pix. sampled)}} & 0.0908 & 0.575 & \cellcolor{red!25}0.1217 & \cellcolor{red!25}0.563   \\ 
+    \hline 
+    \end{tabular}
+    \end{adjustbox}
+    \end{center}
+    \end{table}
+
 
 Overall, there are no significant differences between the strategies that were tested in this ablation study.  However, the random and the grid sampling strategy differ in an important aspect: the latter performs significantly faster and roughly takes 4 times less time to form a batch of triplets $\left(I_{s},I_{t},E_{s\xrightarrow{}t}\right)$ than the random sampling strategy. \newline
 
