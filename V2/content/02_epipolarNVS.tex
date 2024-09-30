@@ -1,4 +1,4 @@
-\chapter{EpipolarNVS: leveraging on Epipolar geometry for single-image Novel View Synthesis} 
+\chapter{EpipolarNVS: leveraging on Epipolar geometry for single-image NVS} 
 \label{chapter:epipolarnvs}
 
 \ifthenelse{\boolean{skipEpipolarNVS}}{\endinput}{}
@@ -14,47 +14,52 @@
 
 \ifthenelse{\boolean{skipEpipolarNVS}}{\endinput}{}
 
-Novel-view synthesis (NVS) can be tackled through different approaches, depending on the general setting: a single source image to a short video sequence, exact or noisy camera pose information, 3D-based information such as point clouds etc. The most challenging scenario, the one where we stand in this work, only considers a unique source image to generate a novel one from another viewpoint. However, in such a tricky situation, the latest learning-based solutions often struggle to integrate the camera viewpoint transformation. Indeed, the extrinsic information is often passed as-is, through a low-dimensional vector. It might even occur that such a camera pose, when parametrized as Euler angles,  is quantized through a one-hot representation. This vanilla encoding choice prevents the learnt architecture from inferring novel views on a continuous basis (from a camera pose perspective). We claim it exists an elegant way to better encode relative camera pose, by leveraging 3D-related concepts such as the epipolar constraint. We, therefore, introduce an innovative method that encodes the viewpoint transformation as a 2D feature image. Such a camera encoding strategy gives meaningful insights to the network regarding how the camera has moved in space between the two views. By encoding the camera pose information as a finite number of coloured epipolar lines, we demonstrate through our experiments that our strategy outperforms vanilla encoding. 
+\ac{NVS} can be approached from various data sources perspectives, ranging from a single image to a video sequence, with or without provided camera pose information, by leveraging 3D-based prior information, such as point clouds, or not. The most challenging scenario, which is the focus of this chapter, involves generating a novel viewpoint from a unique source image. However, in this complex case, the latest learning-based solutions often struggle to efficiently integrate the camera viewpoint transformation. Indeed, the extrinsic information is often passed as-is through a low-dimensional vector. In some cases, the camera pose is even quantized using a one-hot representation when parametrized as Euler angles. This vanilla encoding choice prevents the learned architecture from inferring novel views at any viewpoint that was not registered. 
+
+We argue that there is a better way to encode this relative camera pose by leveraging 3D-related concepts, such as the epipolar constraint. We thus introduce in this chapter a method that encodes the viewpoint transformation as a 2D feature image. This camera encoding strategy provides the network with meaningful insights regarding how the camera has moved in space between the two views. By encoding the camera pose information as a finite number of colored epipolar lines, we demonstrate through our experiments that our strategy outperforms vanilla encoding. 
 
 \section{Introduction}
 
-This \ac{NVS} problem can be addressed from different perspectives, depending on the available data: multiple source images, depth maps, 3D labels such as 3D scene point cloud, accurate or jittered camera poses etc. We considered in this work one of the most extreme cases for the novel-view synthesis issue. Our work constrains the prediction of a scene from a novel viewpoint by solely leveraging a single source image and the corresponding camera viewpoint transformation. 
+The \ac{NVS} problem can be addressed from different perspectives, depending on available data: number of source images, geometrical priors such as depth or normal maps, 3D scene information trough point cloud, textured meshes, accurate or jittered camera poses etc. We considered in this first chapter one of the most extreme cases for the novel-view synthesis issue. Our work constrains the prediction of a novel viewpoint from a scene by solely leveraging a single source image and the corresponding camera viewpoint transformation. 
 
-Currently, efforts are oriented toward getting the most visually appealing results on novel view synthesis, mainly through NeRF-based methods \citep{mildenhall2020nerf,wang2021neus,barron2021mip,barron2022mip}. However, only a few works pursue another tricky challenge in the novel-view synthesis: investigating the most efficient way to condition an NVS architecture on camera pose information. From a general perspective, single-image novel-view methods often restrict the viewpoint transformation to the extrinsic matrices. Intrinsic is thus discarded since most methods around single-image novel-view synthesis ignore physical image formation properties and do not account for rendering, epipolar geometry or homography concepts. Such camera pose conditioning task remains too weakly addressed in the current literature, which motivated us to tackle such an issue in an original way.
+Eforts in\ac{NVS} are often oriented toward getting the most visually appealing results, mainly through \ac{NeRF}-based methods \citep{mildenhall2020nerf,wang2021neus,barron2021mip,barron2022mip}. However, only a limited number of works pursue another tricky challenge in \ac{NVS}: investigate a more efficient way to condition a single-image \ac{NVS} architecture on camera pose information. From a general perspective, associated methods often restrict the viewpoint transformation to the extrinsic matrix. Intrinsic is thus discarded since most methods for single-image \ac{NVS} ignore physical image formation properties and do not account for rendering, epipolar geometry or homography concepts. This camera pose conditioning task remains too weakly addressed in the current literature, which motivated us to tackle such an issue in an original way.
 
 While one of the most straightforward solutions to do so consists in encoding the relative camera viewpoint transformation as a feature vector, we claim such a method is sub-optimal, supported by one of the latest state-of-the-art works in monocular depth prediction \citep{zhao2021camera}. We thus propose in this work an innovative solution to encode the camera relative transformation as a 2D feature RGB image, by leveraging epipolar constraints. The new and implicitly encoded camera viewpoint transformation has a similar spatial resolution as the source image, somehow filling the dimensional gap between pose matrices and the RGB space. The contribution we propose in this first chapter is thus three-fold: 
 \begin{itemize}
 	\item A strategy to encode the camera pose transformation into an implicit feature image builds upon epipolar geometry considerations. 
-	\item A neural network architecture which leverages such camera viewpoint transformation encoding. 
-	\item A spectral loss function that extensively accounts for the higher frequencies of an image to better retrieve tiny and complex details.
+	\item A neural network architecture that account for this camera viewpoint transformation encoding. 
+	\item A spectral loss function that focus onto image highest frequencies to better synthesize complex details.
 \end{itemize}
 
 \section{Related work}
 
-\noindent\textbf{Novel view synthesis in a large extent.} Since modalities involved in novel-view synthesis are broad (images, video sequence, 3D point clouds, depth and disparity maps, camera poses), tremendous approaches investigated ways to tackle such issues. One of the latest trends takes advantage of \ac{NeRF} \citep{mildenhall2020nerf} and their incredible powerfulness to generate highly realistic scenes from unseen viewpoints \citep{wang2021neus,niemeyer2022regnerf,barron2022mip}. However, such architectures are somehow over-fitted over a unique scene and do not have any generalisation abilities. Such a drawback is growingly overcome by recent works \citep{yu2021pixelnerf,li2021mine} that tackle novel view synthesis through the prism of NeRF-based architectures. While MINE \citep{li2021mine} is a \ac{MPI} based method that requires accurate ground truth disparity maps, PixelNeRF \citep{yu2021pixelnerf} works with several input views to refine the predicted novel view. Another important line of work in novel view synthesis for indoor navigation, with datasets such as RealEstate10K \citep{zhou2018stereo} or Matterport3D \citep{zhao2021camera}, produces extremely appealing results with complex architectures \citep{wiles2020synsin,rombach2021geometry,rockwell2021pixelsynth}, often at the expense of complex information to get, such as ground truth depth maps or dense 3D point clouds. \newline
+\noindent\textbf{Novel view synthesis.} Since modalities involved in \ac{NVS} are diverse (\textit{e.g} images, video sequence, 3D point clouds,meshes, depth or disparity maps, camera poses), various approaches have been explored to adress the novel viewpoint generation challenge. One of the latest trends leverages the power of \ac{NeRF} \citep{mildenhall2020nerf} to render highly realistic scenes from unseen viewpoints \citep{wang2021neus,niemeyer2022regnerf,barron2022mip}. However, in their original formulation, these neural radiance-based  architectures overfir to a single scene and lack generalization capabilities. Recent works \citep{yu2021pixelnerf,li2021mine} have increasingly addressed this limitation by adapting NeRF-based architectures to the single-image \ac{NVS} problem. The next chapter \ref{chapter:epinerf} will also focus on how these generalizable \ac{NeRF} networks can be employed with geometric constraints to tackle this issue. While MINE \citep{li2021mine} is a \ac{MPI} based method that requires accurate ground truth disparity maps, PixelNeRF \citep{yu2021pixelnerf} uses one or multiple input views to render novel viewpoints. Another important area of \ac{NVS} research for indoor navigation uses datasets like RealEstate10K \citep{zhou2018stereo} and Matterport3D \citep{zhao2021camera}. These approaches achieve impressive results with complex architectures \citep{wiles2020synsin,rombach2021geometry,rockwell2021pixelsynth}, but they often rely on hard-to-obtain data, such as ground truth depth maps or dense 3D point clouds.. \newline
 
-\noindent\textbf{Camera pose encoding.} Camera pose is compactly represented through: 3 degrees of rotations around each world axis, 3 other ones for translation (both defining the extrinsic matrix) and a few additional ones when intrinsic must be considered (focal length, sensor size etc). One of the most straightforward solutions encodes the viewpoint transformation by computing camera poses difference \citep{sun2018multiview}. Another pose encoding strategy embeds such a low-dimensional camera pose into a higher space, as in \citep{kim2020novel,rombach2021geometry}. These last two possibilities can be simplified if one wants to consider one-hot vectors for camera pose encoding. Finally, the closest work to ours regarding camera pose encoding is \citep{zhao2021camera}, which encodes the camera location (parametrized through a roll and pitch angles as well as a fixed height above a ground plane) as a 2D feature image for depth maps prediction purpose. \newline
+\noindent\textbf{Camera pose encoding.} Camera pose can be represented by three degrees of rotations around each world axis and three more for translation, which together define the extrinsic matrix.  Itrinsic parameters, such as focal length or sensor size could also be considered, leading to few more degrees to embed. One straightforward solution encodes viewpoint transformations by computing camera poses difference \citep{sun2018multiview}. Another approach embeds this low-dimentional camera pose information into a higher-dimentional space, as seen in \citep{kim2020novel,rombach2021geometry}. These last two methods can be further simplified using one-hot vectors for camera pose encoding. Finally, the closest work to ours regarding camera pose encoding is \citep{zhao2021camera}. It encodes the camera location (parametrized through a roll and pitch angles as well as a fixed height above a ground plane) as a 2D feature image for predicting depth maps. \newline
 
-\noindent\textbf{Camera pose conditioning.} Extrinsic camera pose is thus often the unique 3D prior information that conditions the neural network for generating a novel view. Based on the camera pose difference $P_{diff}=P_{target}-P_{source}\in \mathbb{R}^{v}$, the authors from \citep{sun2018multiview} tiled such vector across all the pixels of the source RGB image, feeding their CNN-based architecture with inputs that size $\mathbb{R}^{H\times W\times (3+v)}$. On the other hand, \citep{kim2020novel} adopts a different strategy and concatenates its camera pose feature vector with the one obtained from their CNN-encoder before feeding it to the decoder. 
-Finally, \citep{wiles2020synsin} designed a single image novel-view synthesis method that extensively relies on 3D point cloud consideration. Camera viewpoint transformation is used within the network architecture to update the predicted point cloud before rendering. \newline
+\noindent\textbf{Camera pose conditioning.} Extrinsic camera pose is often the only 3D prior information used to condition a neural network for generating novel viewpoints. Based on the camera pose difference $P_{diff}=P_{target}-P_{source}\in \mathbb{R}^{v}$, the authors in \citep{sun2018multiview} tiled this vector across all the pixels of the source RGB image, feeding their \ac{CNN}-based architecture with inputs sized $\mathbb{R}^{H\times W\times (3+v)}$. In contrast, \citep{kim2020novel} used a different strategy by concatenating the camera pose feature vector with the one obtained from their \ac{CNN} encoder before passing it to the decoder. 
+Lastly, \citep{wiles2020synsin} designed a single-image \ac{NVS} method that extensively relies on 3D point clouds. The camera viewpoint transformation is applied within the network architecture to update the predicted point cloud before rendering. \newline
 
-\noindent\textbf{Single-image novel view synthesis.} Such a framework is the most challenging one since only minimal information is available during training and inference: a source image and a corresponding camera pose transformation that accounts for the target image we aim to generate. To the best of our knowledge, only a few recent works \citep{sun2018multiview,kim2020novel,yu2021pixelnerf}  deal with such a highly constrained setting. While \citep{sun2018multiview, kim2020novel} both handle "discrete" (from ShapeNet \citep{chang2015shapenet}, parametrized through a unique azimuthal angle, the elevation one being fixed) and continuous (as in Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} camera transformations, the pose-feature vector needs to be updated accordingly from a size perspective. This is one of the main benefits of the method we designed. Both discrete and continuous camera information is encoded through a featured image that sizes the same as the source image and that truly leverages the real-world camera transformation that occurred between the source and the target view. Such convenient property allows to inferring (at least with discrete camera poses) viewpoints that were not represented within the training set. \newline
+\noindent\textbf{Single-image novel view synthesis.} This framework is the most challenging one because minimal information is available during training and inference: a source image and the corresponding camera pose transformation needed to generate the target image. To the best of our knowledge, only a few recent works \citep{sun2018multiview,kim2020novel,yu2021pixelnerf} address this highly constrained setting. While \citep{sun2018multiview, kim2020novel} handle discretized camera transformation (from ShapeNet \citep{chang2015shapenet}, through a unique azimuthal angle since elevation is fixed) and continuous ones (in Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} datasets), the pose-feature vector must be adjusted in size accordingly. This adaptability is one of the main benefits of the method we designed. Both discrete and continuous camera transformations are encoded as a featured image with the same resolution as the source image, effectively capturing the real-world transformation between the source and the target views. This property allows us to infer viewpoints, at least for discrete poses, that were not represented within the training set. \newline
 
 \section{Method}
 \subsection{Camera viewpoint transformation encoding}
 \subsubsection{Epipolar geometry overview }
 
-The general framing of our work might be considered one of the trickiest ones in novel-view synthesis since the image generation from a different camera viewpoint is only made prior to a single source image and a relative camera transformation. 
+The general framing of our work can be considered as one of the most challenging, as generating an  image from a different camera viewpoint is only made prior to a single source image and a relative camera transformation. 
 
-We denote by $I_{s} \in \mathbb{R}^{H\times W\times 3}$ the RGB source image and $I_{t}$ the target one we aim to predict.
-The pinhole convenient camera model that we get consideration for is represented through an intrinsic matrix $K \in \mathbb{R}^{3\times3}$. The rigid motion that accounts for the relative transformation between the source and the target view consists of a rotation $R \in SO(3)$ and translation $T\in \mathbb{R}^{3\times1}$, expressed through each camera's extrinsic:
+We denote the RGB source image as $I_{s} \in \mathbb{R}^{H\times W\times 3}$ and the target view, which we aim to predict, as $I_{t}$.
+
+The pinhole camera model we consider is represented by the intrinsic matrix $K \in \mathbb{R}^{3\times3}$. The rigid motion that accounts for the relative transformation between the source and the target view consists of a rotation $R \in SO(3)$ and translation $T\in \mathbb{R}^{3\times1}$, expressed through the extrinsic parameters of each camera:
+
 \begin{equation}
      \begin{cases}
      R = R_{t} R_{s}^{T} \\
      T = t_{t} - R t_{s}
      \end{cases}
 \end{equation}
-with $(R_{s},t_{s})$ and $(R_{t},t_{t})$ respectively accounting for the source and target camera extrinsic. Epipolar geometry \citep{hartley2003multiple} has consideration for the projective geometry that connects two camera viewpoints and has various applications such as Structure from Motion \citep{tamaazousti2011nonlinear}. Epipolar geometry aims to describe the relationship that stands between 3D world location and 2D pixel coordinates, given a stereo pair of cameras and their corresponding poses. The fundamental matrix F is a $3\times3$ matrix that entirely describes such 3D/2D mapping and can be obtained through: 
+
+with $(R_{s},t_{s})$ and $(R_{t},t_{t})$ respectively the source and target camera extrinsics. Epipolar geometry \citep{hartley2003multiple} addresses the projective geometry that connects two camera viewpoints and has various applications such as \ac{SFM} \citep{tamaazousti2011nonlinear}. Epipolar geometry aims to describe the relationship that stands between 3D world location and 2D pixel coordinates, given a stereo pair of cameras and their corresponding poses. The fundamental matrix F is a $3\times3$ matrix that entirely describes such 3D/2D mapping: 
 \begin{equation}
     \mathbf{F} = K^{-T} [T]_{X} R  K^{-1}
 \end{equation}
@@ -64,9 +69,9 @@ with $[.]_{X}$ the skew-symmetric matrix representation of any one-dimensional v
     \mathcal{P}_{p_{s}} = \{p_{t}\in I_{t} | p_{t}^{T}\mathbf{F}p_{s} = 0 \}
 \end{equation}
 
-as the finite set of pixels from $I_{t}$ that live on the epipolar line defined by $l=\mathbf{F}p_{s}$. From a pure geometrical aspect, such line corresponds to the rendered (on $I_{t}$ camera plane) 3D ray that passed through both the camera center of $I_{s}$ and $p_{s}$. 
+as the finite set of pixels from $I_{t}$ that live on the epipolar line defined by $l=\mathbf{F}p_{s}$. From a geometrical viewpoint, such line corresponds to the rendering (on $I_{t}$ camera plane) of the 3D ray that passed through both the camera center of $I_{s}$ and $p_{s}$. 
 
-The fundamental matrix $\mathbf{F}$ makes a pixel-to-line correspondence through a linear equation that involves both the source and the target original camera location. As soon as we aim to use the epipolar geometry to encode the viewpoint transformation, a sampling strategy needs to be set in order to determine which pixel location from the source image $I_{s}$ are going to be used to compute these epipolar lines. Instead of randomly sampling location over the $H\times W$ possibilities, pixels are sampled according to a regular grid $\textbf{G}_{r}$ that spans the whole image, parameter \textit{r} controlling how coarse the grid is: 
+The fundamental matrix $\mathbf{F}$ establishes a pixel-to-line correspondence through a linear equation involving both the source and the target camera locations. When using epipolar geometry to encode the viewpoint transformation, a sampling strategy must be defined to determine which pixel locations from the source image $I_{s}$ will be used to compute these epipolar lines. Rather than randomly sampling location from the $H\times W$ possibilities, pixels are sampled based on a regular grid $\textbf{G}_{r}$ that spans the entire image, with the parameter \textit{r} controlling the grid’s coarseness: 
 
 \begin{equation}
     \mathbf{G}_{r} = \left\{(p_{x},p_{y}) \in \{1,..,H\}\times \{1,..,W\} \Big\rvert \begin{array}{l}
@@ -75,15 +80,15 @@ The fundamental matrix $\mathbf{F}$ makes a pixel-to-line correspondence through
               \end{array}\right\}
 \end{equation}
 
-
 \subsubsection{Encode the camera viewpoint transformation}
 
-Our module encodes the relative camera motion that exists between the source and target views by leveraging epipolar geometry. Its output is fed to one of the branches of our NVS neural network as a feature image, that implicitly represents the transformation that occurred, and is referred as $E_{s\xrightarrow{}t}$.
-An overview of the different stages involved to compute $E_{s\xrightarrow{}t}$ is presented through the pseudo-code\footnote{Some pixel values on $E_{s\xrightarrow{}t}$ might be overwritten by another pixel $p$. We observed the sampling order over $\mathbf{G}_{r}$ has no impact on the encoding strategy.} below in Algorithm \ref{alg:pseudoCode}. \newline
+Our module encodes the relative camera motion between the source and target views by leveraging epipolar geometry. Its output is fed into one of the branches of our \ac{NVS} neural network as a feature image that implicitly represents the transformation that has occurred. We denote it as $E_{s\xrightarrow{}t}$.
+An overview of the different stages involved in computing $E_{s\xrightarrow{}t}$ is presented in the pseudo-code below in Algorithm \ref{alg:pseudoCode}. \newline
 
-As seen in Algorithm \ref{alg:pseudoCode}, each epipolar line reported on $E_{s\xrightarrow{}t}$ has a distinct color, the one associated with the sampled pixel on $I_s$. Such implementation choice gives additional RGB prior information to the network regarding the color that should be generated, even though lightning issues are not considered. One might notice that the last epipolar lines plotted on $E_{s\xrightarrow{}t}$ would overwrite some previous ones, at least at some specific pixel location (on epipoles for instance). We claim, based on experimental observations, that pixel sampling order (and thus epipolar line overwriting) does not have an impact that is significant on the training and inference performances of the model. 
+As shown in Algorithm \ref{alg:pseudoCode}, each epipolar line reported on $E_{s\xrightarrow{}t}$ has a distinct color with the sampled pixel from $I_s$. This implementation choice provides additional RGB prior information to the network regarding the color that should be generated, even though lightning issues are not considered. One might notice that the last epipolar lines plotted on $E_{s\xrightarrow{}t}$ may overwrite some previous lines, particularly at specific pixel locations (such as epipoles).Based on our experimental observations, we assert that the order of pixel sampling order (and thus epipolar line overwriting) does not significantly impact the training and inference performance of the model. 
 
-The encoding method depicted here is thus able to encode any form of camera viewpoint transformation without any structural adaptation. Indeed, most concurrent works need to change the way viewpoint transformation is encoded since continuous poses are not processed the same way as discrete ones, where a one-hot encoding strategy might be used. 
+The encoding method depicted here can encode any form of camera viewpoint transformation without requiring structural adaptation. Indeed, most concurrent works need to modify their encoding strategies for viewpoint transformations, as continuous poses are processed differently than discrete ones, where a one-hot encoding strategy might be employed. 
+
 \begin{algorithm}[h!]
     \caption{Epipolar Encoding module \label{alg:pseudoCode}}
     \SetKwInOut{Input}{input}
@@ -109,7 +114,7 @@ The encoding method depicted here is thus able to encode any form of camera view
     }
 \end{algorithm}
 
-Only non-null pixel values are sampled from $\textbf{G}_{r}$ in our encoding strategy for ShapeNet \citep{chang2015shapenet} since pixels located in the background do not bring any valuable information regarding the corresponding coloured epipolar lines. Figure \ref{fig:examplePoseEncoded} represents the kind of results one might expect with our viewpoint camera transformation encoding strategy on ShapeNet \citep{chang2015shapenet}. 
+Only non-null pixel values are sampled from $\textbf{G}_{r}$ in our encoding strategy for ShapeNet \citep{chang2015shapenet}, as pixels located in the background do not provide valuable information regarding the corresponding colored epipolar lines. Figure \ref{fig:examplePoseEncoded} illustrates the kind of results one might expect with our viewpoint camera transformation encoding strategy on ShapeNet \citep{chang2015shapenet}. 
 \begin{figure}[h!]
 
 \begin{center}
@@ -117,15 +122,14 @@ Only non-null pixel values are sampled from $\textbf{G}_{r}$ in our encoding str
 \includegraphics[width=.26\textwidth]{images/epipolarnvs/It_ECML.png}\hspace{.5cm}%\hfill
 \includegraphics[width=.26\textwidth]{images/epipolarnvs/Est_ECML.jpg}
 \end{center}
-\caption{\textbf{Pair of source/target image with our encoded transformation.} From left to right: Source image $I_s$, Target image $I_t$ and the corresponding $E_{s\xrightarrow{}t}$. From the ShapeNet \citep{chang2015shapenet} \textit{chair} class. Pixel locations sampled from $\textbf{G}_{25}$ are highlighted through red circles.}
+\caption{\textbf{Pair of source/target image with our encoded transformation.} From left to right: Source image $I_s$, Target image $I_t$ and the corresponding $E_{s\xrightarrow{}t}$. From the ShapeNet \citep{chang2015shapenet} \textit{chair} class. Pixel locations sampled from $\textbf{G}_{25}$ are highlighted with red circles.}
 \label{fig:examplePoseEncoded}
 \end{figure}
 
 
+\subsubsection{Extended strategy for real-world camera transformation encoding}
 
-\subsubsection{Extended strategy for encoding}
-
-Performing novel view synthesis on Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} datasets is, from a relative camera transformation perspective, somehow redundant and tricky through our encoding framework. Indeed images contained in these datasets have been recorded through a car driving across city streets, and most of the camera transformations considered are translation motions. Such viewpoint changes between the source and target views are improperly handled by the epipolar theory since depth cues are lost. We therefore extended our initial encoding strategy for those datasets through a fourth channel that primarily accounts for such depth information.
+Performing \ac{NVS} on Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} datasets is redundant and challenging from the perspective of relative camera transformation within our encoding framework. The images from this dataset were recorded from a car driving through city streets. Consequently, the relative transformations between source views and target views are often pure translations. Such viewpoint changes between the source and target views are inadequately handled by epipolar theory, as depth cues are lost. Therefore, we extended our initial encoding strategy for these datasets by introducing a fourth channel that specifically accounts for depth information.
 
 Let's denote:
 \begin{equation}
@@ -143,13 +147,13 @@ the difference between the two absolute translations $t_s$ and $t_t$. Absolute v
     t_{M} = \Delta_{t}\left[p_{M}\right] \quad ; \quad p_{M}= \argmax|\Delta_{t}|
 \end{equation}
 
-The expression of $\delta_{t}$ satisfies two resourceful constraints in our case: 
+The expression of $\delta_{t}$ satisfies two important constraints in our case: 
 
 \begin{itemize}
-    \item It accounts for the main car motion direction and gives some insight regarding the distance the car moved between the source and target view.
-    \item The sign of $\delta_{t}$ indicates whether the source/target frames that were sampled correspond to a forward or backward motion. 
+    \item It accounts for the primary direction of car motion and provides insight into the distance the car moved between the source and target view.
+    \item The sign of $\delta_{t}$ indicates whether the sampled source/target frames correspond to a forward or backward motion.  
 \end{itemize}
-Such properties allow the network to better apprehend the direction of the motion it should take into consideration. The value of  $\delta_{t}$ is finally stored on a fourth channel of $E_{s\xrightarrow{}t}$ only at locations where the epipolar lines had non-zero values in the first three RGB channels. 
+These properties enable the network to better understand the direction of the motion it should consider. The value of  $\delta_{t}$ is ultimately stored in a fourth channel of $E_{s\xrightarrow{}t}$ only at locations where the epipolar lines have non-zero values in the first three RGB channels. 
 
 \begin{figure}[htpb!]
     \centering
@@ -167,14 +171,11 @@ Such properties allow the network to better apprehend the direction of the motio
   \end{figure}
 
   
+As shown in Figure \ref{fig:test}, most car trajectories follow a straight path, with only a few turns in sequence \textbf{00}. Similarly, sequence \textbf{01} is nearly a complete end-to-end pure translation.
 
+\subsection{Neural network architecture and training losses}
 
-As shown on the Figure \ref{fig:test}, most of the car trajectories are made based on a straight path and only a few turns exist in the sequence \textbf{00}. In the same way, the sequence \textbf{01} is almost an end-to-end complete pure translation.
-
-
-\subsection{Neural network architecture and training loss}
-
-The overall network architecture is presented in Figure \ref{fig:architecture}. Such architecture takes inspiration through the one introduced by \citep{kim2020novel}, at least regarding the image-to-image U-Net based encoder/decoder structure with the hard-flow attention strategy. However, the way the transformation viewpoint information is provided to the network architecture drastically changes for our model. While \citep{kim2020novel} performed feature-vectors concatenation at the network's bottleneck stage, we claim such choice is sub-optimal, at least for discrete camera pose information as contained in ShapeNet \citep{chang2015shapenet}. We thus rather encode this camera pose transformation through $E_{s\xrightarrow{}t}$ as an image that feeds a second CNN-based encoder. This last encoder produces a feature vector that will be concatenated to the one obtained by the U-Net based encoder before being consumed by the decoder. 
+The overall network architecture is presented in Figure \ref{fig:architecture}. This architecture is inspired by the one introduced by \citep{kim2020novel}, particularly regarding the image-to-image U-Net based encoder/decoder structure with the hard-flow attention strategy. However, the way transformation viewpoint information is provided to our network architecture differs significantly from the base model. While \citep{kim2020novel} concatenates feature vectors within the bottleneck stage of the \ac{CNN}, we argue that this choice is suboptimal for discrete camera pose information contained in ShapeNet \citep{chang2015shapenet}. Instead, we encode this camera pose transformation through $E_{s\xrightarrow{}t}$ as an image that feeds a second \ac{CNN}-based encoder. This encoder produces a feature vector that is concatenated to the one obtained from the RGB U-Net based encoder before being processed by the decoder. 
 
 \begin{figure}[h!]
   \begin{center}
@@ -184,7 +185,8 @@ The overall network architecture is presented in Figure \ref{fig:architecture}. 
   \label{fig:architecture}
 \end{figure}
 
-The total loss function is a weighted sum  of a \ac{MAE}, referred as $\mathcal{L}_{1}$ and used in \citep{kim2020novel}, and a second term, called $\mathcal{L}_{spectral}$, directly inspired from prior super-resolution work \citep{fritsche2019frequency} and that extensively focuses on the preserving high frequencies. Indeed, considering a 2D Gaussian filter $w_{gauss}$, an image $I$ can be decomposed into a low and a high-frequency components, respectively noted as $I^{LF}$ and $I^{HF}$ : 
+Final loss function is a weighted sum  of a \ac{MAE}, referred as $\mathcal{L}_{1}$, and a second term, called $\mathcal{L}_{spectral}$, directly inspired by prior super-resolution work \citep{fritsche2019frequency}. This latter term extensively focuses on the preserving high frequencies components in the synthesized novel viewpoint. Considering a 2D Gaussian filter $w_{gauss}$, an image $I$ can be decomposed into a low and a high-frequency components, denoted as $I^{LF}$ and $I^{HF}$, respectively. 
+
 \begin{equation}
 \begin{cases}
      I^{LF}  = I\circledast w_{gauss} \\
@@ -192,49 +194,48 @@ The total loss function is a weighted sum  of a \ac{MAE}, referred as $\mathcal{
 \end{cases}
 \end{equation}
 where $\circledast$ represents a 2D convolution operation. 
+
 The final loss function used during training is thus given by: 
 \begin{equation}
     \mathcal{L} = \mathcal{L}_{1} + \lambda \mathcal{L}_{spectral} = |\hat{I}_{t} - I_{t}| + \lambda \left( \hat{I}_{t}^{HF} - I_{t}^{HF} \right)^{2}
     \label{eq:1}
 \end{equation}
-
-
-Such loss directly takes inspiration from \citep{fritsche2019frequency}. Authors emphasise in their work on the high frequencies importance over the image generation process. \newline
+ \newline
 
 The Gaussian filter $w_{gauss}$ we used is straightforwardly defined by a mean $\mu = \frac{k_{s}-1}{2}$ and a variance $\sigma = (\frac{k_{s}}{k_{s}+1})^{2}$, with $k_{s}$=5.
 
-We therefore extensively focus through this loss on the highest frequencies of the target image, to enforce during training the network to retrieve as much as much as possible fine and complex structures. 
+This spectral term extensively focuses on the highest frequencies of the target and generated images, encouraging the network during training to recover as many fine and complex structures as possible.
 
 \section{Experiments}
 All qualitative and quantitative results we obtained through our camera pose encoding strategy are presented in this section. \newline
 
-\noindent\textbf{Datasets.} We experimented our method on the same dataset as \citep{kim2020novel, sun2018multiview}: on the \textit{chair} and \textit{car} class from ShapeNet \citep{chang2015shapenet} as well as on real scene images from KITTI \citep{geiger2012we} and Synthia \citep{ros2016synthia}.
-Results we reported for \citep{kim2020novel} slightly differ from the ones published since we get consideration for a more challenging rendering scenario: jittered camera pose in ShapeNet \citep{chang2015shapenet}, elements on image borders from Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} are not removed anymore through  center-cropping. Such changes are motivated and fully exposed in Appendix \ref{annex:epipolarnvs-dataset}.  \newline
+\noindent\textbf{Datasets.} We trained and tests our method on the \textit{chair} and \textit{car} classes from ShapeNet \citep{chang2015shapenet} as well as on real scene images from KITTI \citep{geiger2012we} and Synthia \citep{ros2016synthia}.
+Results we reported for \citep{kim2020novel} slightly differ from the ones originally published by authors since we get consideration for a more challenging rendering scenario. We jittered camera pose in ShapeNet \citep{chang2015shapenet} and image borders from Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} were not removed by center-cropping operation. Such changes are motivated and fully exposed in Appendix \ref{annex:epipolarnvs-dataset}.  \newline
 
-\noindent\textbf{Training - Testing.} We trained our model on 100,000 iterations, using the same training procedure as \citep{kim2020novel}. Since our camera pose encoding strategy is light enough, we perform ``on the fly'' batch creation during training. Inference scores were averaged over 100 runs with batch sizes of 16. \newline
+\noindent\textbf{Training - Testing.} We trained our model on 100,000 iterations, using the same training procedure as \citep{kim2020novel}. Inference scores were averaged over 100 runs with batch size of 16. \newline
 
-
-\noindent\textbf{Metrics.} We used the \ac{MAE},  \ac{SSIM} \citep{wang2004image} and \ac{PSNR} metrics to score our novel view synthesis architecture. 
+\noindent\textbf{Metrics.} We used the \ac{MAE},  \ac{SSIM} \citep{wang2004image} and \ac{PSNR} metrics to score our single-image \ac{NVS} architecture. 
 
 \subsection{Qualitative Results}
 
-We present in Figure \ref{fig:res_all} an instance of all the datasets we get consideration for. Whereas our model manages to infer and reason about the object size according to the target view on the \textit{Car} and \textit{Chair} classes, novel-view produced by \citep{kim2020novel} fails to do so, producing a result that rather roughly matches the source object size. Our results on these two classes are also sharper and more realistic, both from colour and geometrical perspectives. The car's wheels or the chair's complex back are thus better synthesise with our method. 
+Figure \ref{fig:res_all} presents instances from all the datasets we consider. While our model successfully infers and reasons about object size relative to the target view for the \textit{Car} and \textit{Chair} classes, the novel views produced by \citep{kim2020novel} fails to do so, generating results that roughly match the source object size. Our results on these two classes are also sharper and more realistic, both in term of colour and geometry. For instance, the car's wheels and the chair's intricate back are better synthesized using our method. 
 
-Because \citep{kim2020novel} integrates the camera pose as discretized bins, the viewpoint transformation loses its physical inner 3D consistency structure. On the other hand, our method produces an encoding that fully accounts for the continuous pose transformation that occurred.\newline
+Since \citep{kim2020novel} integrates the camera pose as discretized bins, the viewpoint transformation loses its physical 3D consistency. On the other hand, our method encodes the continuous pose transformation in a way that fully captures the underlying 3D structure.\newline
 
 
 \begin{figure*}[h!]
     \begin{center}
     \includegraphics[width=\textwidth]{images/epipolarnvs/resultsFinal_BMVC.jpg}
     \end{center}
-     \caption{\textbf{Novel view synthesis on the four considered datasets.} Encoded transformation $E_{s\xrightarrow{}t}$ have been obtained with $\textbf{G}_{15}$. From left to right: the source image  $I_s$, $E_{s\xrightarrow{}t}$, \citep{kim2020novel} prediction, our prediction, the target image $I_t$. On overall, our method predicts more consistent results since complete pose transformation has been fed to the network contrary to the concurrent work from \citep{kim2020novel}. }
+     \caption{\textbf{Novel view synthesis on the four considered datasets.} Encoded transformation $E_{s\xrightarrow{}t}$ have been obtained with $\textbf{G}_{15}$. From left to right: the source image  $I_s$, $E_{s\xrightarrow{}t}$, \citep{kim2020novel} prediction, our prediction, the target image $I_t$. On overall, our method predicts more consistent results since complete pose transformation has been fed to the network contrary to concurrent work \citep{kim2020novel}. }
      \label{fig:res_all}
 \end{figure*}
 
-Results of our method synthesised on real-world datasets are depicted on third (Synthia \citep{ros2016synthia}) and fourth (KITTI \citep{geiger2012we}) rows of the Figure \ref{fig:res_all}. One might noticed how the car moved between the source and the target view in the Synthia \citep{ros2016synthia} dataset. While our results remain blurry, our network architecture successfully hallucinated the forward motion that the bus had. On the other hand, our main concurrent work mostly predicts the source image, and fails to capture the relative displacement that occurred in this example. An almost similar scenario is inspected on KITTI \citep{geiger2012we}. While the sign "30" on the ground has disappeared between the two views, our method successfully captures such drastic change while \citep{kim2020novel} fails to the same extent as previously. We emphasise the fundamental role our camera encoding strategy has here, especially regarding the shape of the various objects where the perspective changes a lot between $I_s$ and $I_t$ (on the roof of the house, top left border). \newline
+The results of our method on real-world datasets are shown in the third (Synthia \citep{ros2016synthia}) and fourth (KITTI \citep{geiger2012we}) rows of Figure \ref{fig:res_all}. Notably, in the Synthia \citep{ros2016synthia} dataset, one can observe the car’s motion between the source and target views. While our results remain somewhat blurry, our network successfully hallucinated the forward motion of the bus. Our main concurrent work however replicates the source image and fails to capture the relative displacement in this example. A similar scenario is observed in the KITTI \citep{geiger2012we} dataset. While the sign "30" on the ground disappears between the two views, our method captures this drastic change,  whereas \citep{kim2020novel} stuggles as it did previously. We emphasise the role our camera encoding strategy plays here, especially regarding the shape of various objects where the perspective changes significantly between $I_s$ and $I_t$ (such as the roof of the house in the top-left corner). \newline
 
 
-While results presented on Figure \ref{fig:res_all} for real world datasets focus on the overall motion that occurred, we highlight on Figure \ref{fig:res_all2} in which extent high-frequency details can be retrieved by our model. The global motion is quite properly handled by \citep{kim2020novel} too, but our method manages to better retrieved tiny details structure for the paintings on the ground. The Spectral loss we used during training helped the network to handle these high frequencies. 
+While results presented in Figure \ref{fig:res_all} for real world datasets highlight the overall motion that occurred, we focus in Figure \ref{fig:res_all2} on the extent to which high-frequency details are recovered by our model. Although the global motion is reasonably well handled by \citep{kim2020novel}, our method better retrieves tiny details, such as the paintings on the ground. The Spectral loss we used during training helped the network handle these high-frequency details. 
+
 \begin{figure*}[h!]
     \begin{center}
     \includegraphics[width=\textwidth]{images/epipolarnvs/rebbutal_KITTI_3.jpg}
@@ -246,9 +247,9 @@ While results presented on Figure \ref{fig:res_all} for real world datasets focu
   
 \subsection{Quantitative Results}
 
-We report some performance results over the four datasets we get consideration for. Tables \ref{tab:1} and \ref{tab:2} respectively summarise the scores for the synthetic ShapeNet \citep{chang2015shapenet} dataset and the real-scene ones (Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we}). While our method outperforms concurrent works on MAE, we reach extremely competitive results with the SSIM metric too, since only \citep{sun2018multiview} gets better scores. \newline
+We present performance results across the four datasets we considered. Tables \ref{tab:1} and \ref{tab:2} respectively summarize the scores for the synthetic ShapeNet \citep{chang2015shapenet} dataset and the real-scene ones (Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we}). While our method outperforms concurrent approaches on the \ac{MAE} metric, we also achieve highly competitive results on SSIM, with only \citep{sun2018multiview} achieving better scores. \newline
 
-However, we emphasise on a crucial aspect regarding the reported scores. Only our method and the one from \citep{kim2020novel} has been retrained with the extended and challenging datasets that we presented earlier. Results from remaining works \citep{tatarchenko2015single,zhou2016view,park2017transformation,sun2018multiview,} are the ones that were originally published by authors. 
+We emphasise on an important aspect regarding the reported scores. Only our method and the one from \citep{kim2020novel} has been retrained with the extended and challenging datasets that we introduced earlier. Results from remaining works \citep{tatarchenko2015single,zhou2016view,park2017transformation,sun2018multiview,} are the original ones published by the respective authors. 
 
 \begin{table}[h!]
     \caption{\textbf{Quantitative results.} Comparisons against state-of-the-art methods on the category specific \textit{Chairs} and \textit{Cars} classes from the ShapeNet dataset \citep{chang2015shapenet}. Best results are highlighted in \colorbox{red!25}{red}, second ones in \colorbox{orange!25}{orange} and third ones in \colorbox{yellow!25}{yellow}. }
@@ -275,7 +276,7 @@ However, we emphasise on a crucial aspect regarding the reported scores. Only ou
     \end{center}
     \end{table}
 
- Results on Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} are reported on Table \ref{tab:2} and are competitive with current state of the art methods. We emphasize that our method (as well as \citep{kim2020novel}) was trained on more complex scenarios from an image-content perspective: both Synthia and KITTI images were resized to $256\times 256$ without any center-cropping operation (which allows to discard the most challenging elements from the scenes). 
+ Results on the Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} datasets are reported in Table \ref{tab:2}. Our model performance is competitive with current state of the art methods. We highlight that our method, as well as \citep{kim2020novel}, was trained on more complex scenarios from an image-content perspective: both Synthia and KITTI images were resized to $256\times 256$ without any center-cropping, which would have removed the most challenging elements from the scenes.
 
 \begin{table}[h!]
     \caption{\textbf{Quantitative results.} Comparisons against state-of-the-art methods Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} datasets. Best results are highlighted in \colorbox{red!25}{red}, second ones in \colorbox{orange!25}{orange} and third ones in \colorbox{yellow!25}{yellow}. }
@@ -299,15 +300,13 @@ However, we emphasise on a crucial aspect regarding the reported scores. Only ou
     \end{center}
     \end{table}
 
-
-
 \subsection{Ablation studies}
 \label{sec:ablation}
-We conduct ablation studies to highlight and understand how some meaningful properties of our encoding strategy behave. \newline
+We conducted ablation studies to highlight and understand how key properties of our encoding strategy behave. \newline
 
-\textbf{Benefit of the extended encoded pose strategy}
+\textbf{Benefit of the extended encoded pose strategy.}
 
-Dealing with real-world scene datasets and the maximum 10 frames difference that could occurred between the source and the target view is one of the most tricky scenarios for single-image novel view synthesis. We thus conduct a first ablation study to validate the intuition behind this additional channel that encodes the relative largest motion in the (XZ) plane. Please note that the Spectral loss has not been added in this ablation study, leading to slightly different results from the original reported ones. 
+Handling real-world datasets, where a maximum 10 frames can separate the source and the target views, represents a challenging configuration for single-image \ac{NVS}. Therefore, we conducted an intial ablation study to validate the intuition behind the additional channel that encodes the largest relative motion in the (XZ) plane. The spectral loss was not included during training in this ablation study, resulting in slighlty different outcomes from the originally reported results. 
 
 \begin{table}[h!]
     \caption{\textbf{Ablation comparison.} Benefit on Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} datasets of our extended encoding strategy. Adding such fourth channel helps the network to better perform on real-world datasets. The grid $\textbf{G}_{15}$ has been used in both cases. Best results are highlighted in \colorbox{red!25}{red}. }
@@ -327,7 +326,7 @@ Dealing with real-world scene datasets and the maximum 10 frames difference that
     \end{center}
     \end{table}
 
-As shown in Table \ref{tab:compExtended}, and considering the neural network architecture as fixed, the fourth channel we have added to our representation $E_{s\xrightarrow{}t}$ clearly helps the network to perform better in the task it has been trained for.  The SSIM gained more than 2 points on average while the MAE significantly decreased (by almost 20\% on average for the two datasets) to reach competitive results with \cite{kim2020novel}. 
+As shown in Table \ref{tab:compExtended}, and considering the neural network architecture as fixed, the fourth channel added to our representation $E_{s\xrightarrow{}t}$ clearly improves the network's performance on the task it was trained for. The SSIM increased by more than 2 points on average, while the \ac{MAE} significantly decreased (by almost 20\% on average across the two datasets), reaching competitive results compared to \cite{kim2020novel}. 
 
 \begin{figure}[htp]
 
@@ -338,13 +337,12 @@ As shown in Table \ref{tab:compExtended}, and considering the neural network arc
 \caption{\textbf{Impact of a fourth channel into our encoding scheme.} Source fixed view $I_s$ (top row, Left) and three consecutive target views (bottom row, Left) from Synthia \cite{ros2016synthia} test set. - Predictions made by our model with the encoded pose (top row,Right) and the extended encoded pose strategy (bottom row,Right). Adding an additional channel in our extended pose encoding allows the network to better apprehend the motion that occurred in Synthia \cite{ros2016synthia} and KITTI \cite{geiger2012we}. The grid $\textbf{G}_{15}$ has been used in both cases.}
 \label{fig:ablaSynthia}
 \end{figure}
-We highlight on Figure \ref{fig:ablaSynthia} the positive influence this last channel has on the our model. 
 
-While the manhole cover (disappearing on the target views sequence) is entirely discarded by the network trained with the 3 channel pose encoding representation, the extended version we proposed managed to grasp the car's motion.\newline 
+We highlight in Figure \ref{fig:ablaSynthia} the positive influence this additional channel has on the our model. While the manhole cover (which disappears in the target view sequence) is completely  ignored by the network trained with the three-channel pose encoding representation, the extended version we proposed successfully captures the car's motion.\newline 
 
-\textbf{Spectral loss influence}
+\textbf{Spectral loss influence.}
 
-A second ablation study has been conducted to highlight to which extent the spectral loss function positively impacts the training of our model architecture. 
+A second ablation study was conducted to highlight the extent to which the spectral loss function positively impacts the training of our model architecture. 
 \begin{table}[h!]
     \caption{\textbf{Ablation study.} Impact of the Spectral loss function over the four differerents datasets EpipolarNVS has been trained and tested on.}
     \label{tab:spectral}
@@ -373,7 +371,7 @@ A second ablation study has been conducted to highlight to which extent the spec
 \end{center}
 \end{table}
 
-As seen in Table \ref{tab:spectral}, constraining the training on the high frequencies helps the network to generate more realistic novel views. Such quantitative improvement is visually confirmed in Figure \ref{fig:spectral_res} where the same object instance is generated through both configurations with the ShapeNet \textit{Car} class.\newline 
+As shown in Table \ref{tab:spectral}, constraining the training to focus on high frequencies helps the network generate more realistic novel views. This quantitative improvement is visually confirmed in Figure \ref{fig:spectral_res}, where the same object instance is generated using both configurations from the ShapeNet \textit{Car} class.\newline 
 
 \begin{figure*}[h!]
     \begin{center}
@@ -383,7 +381,7 @@ As seen in Table \ref{tab:spectral}, constraining the training on the high frequ
      \label{fig:spectral_res}
 \end{figure*}
 
-\textbf{Discrete grid $\textbf{G}_{r}$ granularity and sampling strategy}
+\textbf{Discrete grid $\textbf{G}_{r}$ granularity and sampling strategy.}
 
 We present a third ablation study to get some knowledge regarding the granularity our grid sampling needs. Beyond the three grids we tested out, we also consider a random sampling strategy, that consists of sampling a fixed number (corresponding to 1\% of pixels for a $256\times 256$ image) of locations. Table \ref{tab:3} summarises the different results of this experiment on the real-world datasets.
 

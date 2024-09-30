@@ -60,20 +60,10 @@ In summary, we build up an improved 3D reconstruction pipeline based on vanilla 
 \end{itemize}
 
 \section{Background: Gaussian Splatting}
-A first complete overview of the underlying concepts behind GS is presented in this section. GS leverages on 3D Gaussian primitives to explicitly model the 3D scene. It has a fully differentiable pipeline that can solely be supervised at 2D-image level. Figure \ref{fig:gs-overview} gives few insights regarding how such a pipeline is built. \newline
-
-\begin{figure*}[htb!]
-    \center
-  \includegraphics[width=\linewidth]{images/gaussiansplatting/overview_pipeline.png}
-  \caption{\textbf{Gaussian Splatting pipeline overview.} Starting from a sparse 3D point cloud, GS is designed on a lightweight and differentiable pipeline that does not involve any deep or shallow neural architectures. \textit{Original illustration comes from the seminal paper}\citep{kerbl20233d} while our modifications are highlighted in \textcolor{red}{red}.}
-  \label{fig:gs-overview}
-\end{figure*}
-
-We present below the key steps that were defined in the original GS seminal work \citep{kerbl20233d}.
+We present below a first complete overview of the underlying concepts behind \ac{GS} \citep{kerbl20233d}. It leverages on 3D Gaussian primitives to explicitly model the 3D scene. It has a fully differentiable pipeline that can solely be supervised at 2D-image level. 
 
 
-\subsection{Initialization} From a sparse coloured Structure from Motion (SfM)-3D point cloud, referred as $\mathcal{P}\in\mathbb{R}^{N\times(3+3)}$, an associated set of 3D Gaussians $\{\mathcal{G}_{k}|k=1,...,K\}$ is build. Each primitive $\mathcal{G}_{k} $ has therefore an attached set of learnable attributes, defined in the Table \ref{tab:gauss-param}. 
-
+\subsection{Initialization} From a sparse coloured Structure from Motion (SfM)-3D point cloud, referred as $\mathcal{P}\in\mathbb{R}^{N\times(3+3)}$, an associated set of 3D Gaussians $\{\mathcal{G}_{k}|k=1,...,K\}$ is build. Each primitive $\mathcal{G}_{k} $ has therefore an attached set of learnable attributes, defined in the Table \ref{tab:gauss-param}, and expressed in the world coordinate system.
 
 \begin{table}[h!]
   \centering
@@ -109,47 +99,48 @@ Considering any point \textit{p} in the world 3D space, the geometry of a primit
 
 \subsection{3D Gaussian projection} The 3D Gaussian parameters are optimised during training phase by only leveraging on an image-based supervision signal. The 3D ellipsoids must thus be render on 2D image plane in a differentiable manner and a corresponding 2D mean and covariance need to be derived from $\mu^{(k)}_{3D}$ and $\Sigma^{(k)}_{3D}$ for each primitive using EWA splatting \citep{zwicker2001ewa}. 
 
-Given any viewpoint we want to render, let's denote corresponding world-to-camera extrinsic matrix $W=[R|t]$ and the intrinsic $K$. The gaussian center $\mu^{(k)}_{3D}$ is easily projected in 2D through the perspective projection: 
+We breakdown the different steps required to obtain those rendered 3D gaussians onto 2D image plane. 
+
+Given any viewpoint we want to render, any 3D primitive $\mathcal{G}_{k}$ expressed in world coordinate has to be expressed in camera coordinate system first. Let's denote corresponding world-to-camera extrinsic matrix $W=[R|t]$. 
+
+The 3D mean of $\mathcal{G}_{k}$, denoted $\mu^{(k)}_{cc}$, is easly expressed through: 
 
 \begin{equation}
-  \begin{bmatrix}
-    u \\
-    v \\
-    z
-  \end{bmatrix} = KW\mu^{(k)}_{3D} = K(R\mu^{(k)}_{3D}+t) = K \mu^{(k)}_{cc}
+  \mu^{(k)}_{cc} = R\times \mu^{(k)}_{3D}+t
 \end{equation}
-where $\mu^{(k)}_{cc}$ refers to 3D location expressed in the camera coordinate system. Finally, the 2D mean $\mu^{(k)}_{2D} = \begin{bmatrix}
-  u/z \\
-  v/z
-\end{bmatrix}$ can be  thus expressed in the pixel coordinate system as:
-\begin{equation}
-  \mu^{(k)}_{2D} = K(W\mu^{(k)}/(W\mu^{(k)}_{z})) = K(\mu^{(k)}_{cc}/(\mu^{(k)}_{cc,z}))
-\end{equation}
-We finally denotes by $\mu^{(k)}_{ncd}$ the 2D mean expressed in the NDC coordinate system from $\mu^{(k)}_{2D}$. 
 
-Regarding the 3D covariance, $\Sigma^{(k)}$ is expressed in the camera coordinate system through: 
+while the covariance $\Sigma^{(k)}_{3D}$ can be obtained trough: 
 
 \begin{equation}
   \Sigma^{(k)}_{cc}= R\Sigma^{(k)}_{3D}R^{T}
   \label{eq:gs-3dcov-transfrom}
 \end{equation}
 
-and in image/ray space as:
+The whole developement of such an expression for $\Sigma^{(k)}_{cc}$ is given in Appendix \ref{appendix:cov}. 
+
+As soon as the volume rendering needs to be performed in the ray space \footnote{Computation is easier in this space since viewing rays are parallel to a coordinate axis}, which is a non-cartesian coordinate system, original 3D-\ac{GS} project the primitive $\mathcal{G}_{k}$ (expressed in the camera space) onto the $z=1$ plane through the projective transform $\phi$: 
+
 \begin{equation}
-  \Sigma^{(k)}_{ic}= J_{k}\Sigma^{(k)}_{cc}J_{k}^{T}
-  \label{eq:gs-3d2dcov}
+  \phi(p') = [p_{x}'/p_{z}',p_{y}'/p_{z}',1] = p'\times(p_{0}^{T}p')^{-1}
+\end{equation}
+where $p'=Wp = [p_{x}',p_{y}',p_{z}']^{T}$ is a 3D point expressed in camera coordinate system and and $p_{0} = [0, 0, 1]^{T}$. 
+
+However, such a projective function $\phi$ is not affine (as it was the case for $W$ during the world to camera space transform) and one need to locally approximate $\phi$ (for each primitive) with an affine transformation using Taylor first order series: 
+
+\begin{equation}
+  \label{eq:affine_transform}
+  \phi(p') = \approx \phi(\mu_{cc}) + \frac{\partial \phi}{\partial p'}(\mu_{cc})(p' - \mu_{cc})
 \end{equation}
 
-where $J = \partial \mu^{(k)}_{2D} / \partial \mu^{(k)}_{3D}$ is the Jacobian of the mean projection formula (\textit{i.e} the affine approximation of the 3D-2D projection).
+whereas we denote $J = \frac{\partial \phi}{\partial p'}(\mu_{cc})$, the jacobian of this affine approximation of $\phi$. 
 
-
-As explained in \citep{zwicker2001ewa}, one can drop the thrid row and column of  $ \Sigma^{(k)}_{ic}$ to get a 2D covariance matrix, named $\Sigma^{(k)}_{2D}$. Applying a projective transformation to any 3D gaussian primitive $\mathcal{G}_{k}$ lead to another scaled 2D gaussian primitive, termed $g_{k}$: 
+One can derive from $J$ and $\phi$ an expression for $\mu^{(k)}_{2D}$ and $\Sigma^{(k)}_{2D}$, the 2D projected gaussian primitive, termed  $g_{k}$, in the image space. Complete derivation is available in Appendix \ref{appendix:cov} and we thus end with: 
 
 \begin{equation}
   g_{k}(x) = \exp(-\frac{1}{2}(x-\mu^{(k)}_{2D})^{T}(\Sigma^{(k)}_{2D})^{-1}(p-\mu^{(k)}_{2D}))
 \end{equation}
 
-3DGS seminal work \citep{kerbl20233d} finally performs alpha blending to render a color $\hat{c}(x)$ through: 
+3D-\ac{GS} seminal work \citep{kerbl20233d} finally performs alpha blending to derive the color $\hat{c}(x)$ of the pixel: 
 
 \begin{equation}
 \label{eq:gs-alpha-blending}
@@ -182,12 +173,6 @@ where $L_{\pi}$ denotes the loss under viewpoint $\pi$. Such a gradient magnitud
 \end{equation}
 holds for gaussian primitive $\mathcal{G}_{k}$, the latter is either splited or cloned depending on its size. Largest eigenvalue of $\Sigma_{k}$ is used to status on $\mathcal{G}_{k}$ size: if such an eigenvalue is above another fixed user defined threshold, primitive is splited, cloned otherwise. \newline
 
-\subsection{Differentiable rasterizer} As soon as the supervisory signal is 2-dimensional, one can leverage onto a differentiable rasterizer to made such pipeline end-to-end trainable. We provide the key steps of such a tile-based rasterizer: 
-
-\begin{enumerate}
-    \item Image screen is divided into $16\times 16$ 
-\end{enumerate}
-
 \subsection{Training} 
 Gaussians parameters are learned during training through the vanilla stochastic gradient descent optimization procedure. The corresponding loss function is expressed through: 
 \begin{equation}
@@ -195,7 +180,14 @@ Gaussians parameters are learned during training through the vanilla stochastic 
 \end{equation}
 
 \section{Our 3D GS-based pipeline}
-We now extensively present in this section the 3D gaussian splatting system we designed for our $360^{\circ}$ spin rendering stabilization problem. We build up our system on top of three distinct strategies, that all consistently improve the overall pipeline. 
+We now extensively present in this section the 3D gaussian splatting system we designed for our $360^{\circ}$ spin rendering stabilization problem. We build up our system on top of three distinct strategies, that all consistently improve the overall pipeline. Figure \ref{fig:gs-overview} gives few insights regarding how such a pipeline is built. \newline
+
+\begin{figure*}[htb!]
+    \center
+  \includegraphics[width=\linewidth]{images/gaussiansplatting/overview_pipeline.png}
+  \caption{\textbf{Gaussian Splatting pipeline overview.} Starting from a sparse 3D point cloud, GS is designed on a lightweight and differentiable pipeline that does not involve any deep or shallow neural architectures. \textit{Original illustration comes from the seminal paper}\citep{kerbl20233d} while our modifications are highlighted in \textcolor{red}{red}.}
+  \label{fig:gs-overview}
+\end{figure*}
 
 \subsection{Viewing Direction}
 First bloc we get into consideration on top of the existing GS vanilla framework come from ViewingDirection-GS (VDGS) \citep{malarz2023gaussian}. Core authors idea is to some extend mix concepts from both NeRF and GS to get the most of both framework, as depicted on Figure \ref{fig:gs-nerf}. 
@@ -516,7 +508,7 @@ These figures are finally visually confirmed through the exhaustive rendered vie
 \label{fig:gs-vh-result}
 \end{figure*}
 
-\section{Limitation and further works}
+\section{Limitations}
 \label{sec:gs-limitation}
 
 Wheareas our 3D reconstruction pipeline is able to faithfully render and synthesize novel view at training and \textit{in-distribution} locations, moving to far war away from the original camera path might lead to severe artefact at render time. One of the most known undesired effect for 3D \ac{GS} scene is so-called floater artifact. We illustrate on Figures \ref{fig:floater-limitation} and \ref{fig:floater-removed} this effect\footnote{We illustrate this limitation on another scene since the one we used in this chapter is not that much prone to such needle artifact effect.} and how it can easely handled by narrowing the viewing camera frustrum at inference time. These needle artifacts are rendered when $z_{min}=0.2$ since the associated gaussians primitives has the minimal required depth to be taken into account during the rasterization. Increasing the minimal depth to $z_{min}=1.2$ each primitive has to get for being rasterized allow to not render them anymore since they do not fall into the new camera frustrum that has been narrowed. 
@@ -559,6 +551,11 @@ Beyond the rendering of these unwanted gaussian primitives, rendering at non-tra
   \caption{\textbf{Main limitation for $360^{\circ}$ spin stabilization.} While a rendering at a training location gives appealing result, moving ahead and try to render the same scene remains a challenging case that is for know unadressed.}
   \label{fig:nontraining-rendering}
 \end{figure}
+
+\section{Current works}
+Whereas improving the 3D rendering at non-training locations remains one of the core challenges ahead for further research, current work is mostly focused toward geometrical priors integration within the \ac{GS} pipeline that was described earlier. Indeed, introducing depths and normals regularization during training enforce gaussian primitives to better model the car surface in 3D. 
+We thus currently leverage on a monocular depth [DA2] and normals estimation network to obtain these ground truth depths and normals maps. 
+
 
 
 \section{Conclusion}

@@ -554,23 +554,78 @@ Figures \ref{fig:supp_cars} and \ref{fig:supp_chairs} depict additional side-by-
 
 We present in this last annex some additional information regarding the Chapter ~\ref{chapter:gausssplat}. 
 
-\section{Spherical Harmonics: theory }
-\label{appendix:gs-sh}
-
-\section{3D covariance splatting}
+\section{Gaussian primitives transformation}
 \label{appendix:cov}
-Let's first get into the equation \ref{eq:gs-3dcov-transfrom} presented in Chapter \ref{chapter:gausssplat}. 
+Let's first get into the equation \ref{eq:gs-3dcov-transfrom} presented in Chapter \ref{chapter:gausssplat}, to transform the 3D covariance $\Sigma^{(k)}_{3D}$ from world to camera coordinate system.
 
-Covariance $\Sigma_{k}$ is expressed in the camera coordinates as $R\Sigma_{k}R^{T}$. Indeed, from a general perspective, for any transformed point $p$ through $W$: 
+Given the linear transformation $R$ and the translation $t$, one can thus express any point $p$ in the world coordinate into its camera coordinate counter part through $p' = R\times p + t$. We thus also have the revert operation with: $p = R^{-1}\times (p' - t)$. 
+
+The 3D gaussian primitive $\mathcal{G}_{k}$: 
 
 \begin{equation}
+    \mathcal{G}_{k}(p) = \exp \left(-\frac{1}{2}(p-\mu^{(k)}_{3D})^{T}(\Sigma^{(k)}_{3D})^{-1}(p-\mu^{(k)}_{3D})\right)
+  \end{equation}
+  
+is thus transformed through: 
+\begin{equation}
     \begin{aligned}
-    \text{Var}[Wp] &= \mathbb{E}[(Wp - \mathbb{E}[Wp])(Wp - \mathbb{E}[Wp])^T] \\
-    &= \mathbb{E}[(Rp+t - (R\mathbb{E}[p]+t))(Rp+t - (R\mathbb{E}[p]+t))^T] \\
-    &= \mathbb{E}[R(p - \mathbb{E}[p])(p - \mathbb{E}[p])^T R^T] \\
-    &= R\text{Var}[p]R^T \\
+    \mathcal{G}_{k}(p) &= \exp \left( -\frac{1}{2} \{R^{-1}(p'-t) - R^{-1}(\mu^{(k)}_{cc} -t)\}^{T} (\Sigma^{(k)}_{3D})^{-1}\{R^{-1}(p'-t) - R^{-1}(\mu^{(k)}_{cc} -t)\}  \right) \\
+    &= \exp \left( -\frac{1}{2}\{ R^{-1}(p'-\mu^{(k)}_{cc})\}^{T}(\Sigma^{(k)}_{3D})^{-1})\{ R^{-1}(p'-\mu^{(k)}_{cc})\} \right) \\
+    &= \exp \left( -\frac{1}{2}(p'-\mu^{(k)}_{cc})^{T}R\times(\Sigma^{(k)}_{3D})^{-1}\times R^{-1}(p'-\mu^{(k)}_{cc})\right) \\
+    &= \exp \left( -\frac{1}{2}(p'-\mu^{(k)}_{cc})^{T}(\Sigma^{(k)}_{3D})^{-1}(p'-\mu^{(k)}_{cc})\right) \\
     \end{aligned}
-    \end{equation}
+\end{equation}
+
+with thus $\Sigma^{(k)}_{3D} = R\times \Sigma^{(k)}_{3D}\times R^{-1}$. 
+
+
+Considering the affine approximation of $\phi$, we thus have from Equation \eqref{eq:affine_transform}: 
+
+\begin{equation}
+  \phi(p') - \phi(\mu_{cc}) \approx J(p' - \mu_{cc})
+\end{equation}
+
+and the primitive $\mathcal{G}_{k}$ is expressed in the ray space as: 
+
+\begin{equation}
+  \begin{aligned}
+\mathcal{G}_{k}(\phi(p')) &= \exp \left( -\frac{1}{2}(\phi(p')-\phi(\mu^{(k)}_{cc}))^{T}(\Sigma^{(k)}_{3D})^{-1}(\phi(p')-\phi(mu^{(k)}_{cc}))\right)\\
+                        &= \exp \left( -\frac{1}{2}(J_{k}(p'-\mu^{(k)}_{cc}))^{T}(\Sigma^{(k)}_{3D})^{-1}(J_{k}(p'-mu^{(k)}_{cc}))\right) \\
+                        &= \exp \left( -\frac{1}{2}(p'-\mu^{(k)}_{cc})^{T}J_{k}^{T}(\Sigma^{(k)}_{3D})^{-1}J_{k}(p'-mu^{(k)}_{cc})\right)\\
+                        &= \exp \left( -\frac{1}{2}(p'-\mu^{(k)}_{cc})^{T}(J_{k}\Sigma^{(k)}_{3D}J_{k}^{T})^{-1}(p'-mu^{(k)}_{cc})\right)
+  \end{aligned}
+\end{equation}
+
+As explained in \citep{zwicker2001ewa}, one can drop the thrid row and column of  $ \Sigma^{(k)}_{ic}$ to get a 2D covariance matrix, named $\Sigma^{(k)}_{2D}$. Applying a projective transformation to any 3D gaussian primitive $\mathcal{G}_{k}$ lead to the scaled 2D gaussian primitive, termed $g_{k}$: 
+
+\begin{equation}
+    g_{k}(x) = \exp(-\frac{1}{2}(x-\mu^{(k)}_{2D})^{T}(\Sigma^{(k)}_{2D})^{-1}(p-\mu^{(k)}_{2D}))
+  \end{equation}
+
+with $\mu^{(k)}_{2D}= \phi(\mu_{cc}^{k})$ and $\Sigma^{(k)}_{2D}= J\Sigma^{(k)}_{cc}J^{T}$ the 2D mean and $2\times2$ covariance matric of $ g_{k}$. 
+
+
+\section{Spherical Harmonics: How color is made view-dependent ?}
+\label{appendix:gs-sh}
+
+A gaussian primitive $\mathcal{G}_{k}$ do not store the color information through an RGB value. Authors from 3D-\ac{GS} indeed rather made color view-dependent by relying on \ac{SH} functions. 
+
+The normalized viewing direction $\mathbf{d}$ we looking at can thus be expressed in spherical coordinates through the tuple of angles $(\theta,\phi)$. \ac{SH} functions are defined on sphere surface with \textit{l} of bands and $-l \leq  m \leq m$ elementary functions $Y_{l}^{m}$ within each band.
+
+\begin{equation}
+    Y_{l}^{m}(\theta,\phi) = \frac{(-1)^{l}}{2^{l}l!} \times \sqrt{\frac{(2l+1)(l+m)!}{4\pi(l-m)!}}e^{im\phi}(sin(\theta))^{-m}\frac{d^{l-m}sin(\theta)^{2l}}{d(cos(\theta)^{l-m})}
+\end{equation}
+
+\ac{GS} usually considers 4 bands of \ac{SH}, and consider the view-dependent color $c$: 
+
+\begin{equation}
+    c(\mathbf{d}) = \sum_{l=0}^{3}\sum_{m=-l}^{m=l}k_{l}^{m}Y_{l}^{m}(\mathbf{d})
+\end{equation}
+
+while the $k_{l}^{m}$ are the \ac{SH}-coefficient that needs to be learned during training per gaussian primitives. 
+
+
+\end{equation}
 
 \section{Undetermined positional gradient signs in the ADC}
 \label{appendix:sign-gradient}
