@@ -84,7 +84,7 @@ We present below a first complete overview of the underlying concepts behind \ac
   \label{tab:gauss-param}
 \end{table}
 
-While mean, color and opacity can be optimised without any constraints with gradient-descent based algorithm, $\Sigma^{(k)}_{3D}$ has to remain semi-definite positive \footnote{\textit{i.e} $ \forall a \in \mathbb{R}^{3}: a^{T}\Sigma^{(k)}_{3D}a \geq 0$} during training to represent a meaningful 3D coviance matrix. As holding this constraint during the optimization would be to complex, $\Sigma^{(k)}_{3D}$ is factorized (as an eigendecomposition) in the world coordinate system via with a rotation matrix $O_{k}$ (analytically expressed with 4 quaternions) and a scaling vector $s_{k}$: 
+While mean, color and opacity can be optimised without any constraints with gradient-descent based algorithm, $\Sigma^{(k)}_{3D}$ has to remain semi-definite positive \footnote{\textit{i.e} $ \forall a \in \mathbb{R}^{3}: a^{T}\Sigma^{(k)}_{3D}a \geq 0$} during training to represent a meaningful 3D coviance matrix. As holding this constraint during the optimization would be to complex, $\Sigma^{(k)}_{3D}$ is factorized (as an eigendecomposition) in the world coordinate system via with a rotation matrix $O_{k}$ (analytically expressed as a four-dimentional quaternion $q_{k}$) and a scaling vector $s_{k}$: 
 
 \begin{equation}
     \Sigma^{(k)}_{3D} = O_{k}s_{k}s_{k}^{T}O_{k}^{T}
@@ -190,7 +190,7 @@ We now extensively present in this section the 3D gaussian splatting system we d
 \end{figure*}
 
 \subsection{Viewing Direction}
-First bloc we get into consideration on top of the existing GS vanilla framework come from ViewingDirection-GS (VDGS) \citep{malarz2023gaussian}. Core authors idea is to some extend mix concepts from both NeRF and GS to get the most of both framework, as depicted on Figure \ref{fig:gs-nerf}. 
+First bloc we get into consideration on top of the existing GS vanilla framework come from \ac{VDGS} \citep{malarz2023gaussian}. Core authors idea is to some extend mix concepts from both NeRF and GS to get the most of both framework, as depicted on Figure \ref{fig:gs-nerf}. 
 
 \begin{figure}[htpb!]
   \centering
@@ -215,9 +215,9 @@ First bloc we get into consideration on top of the existing GS vanilla framework
   \label{fig:gs-nerf}
 \end{figure}
 
-The trained GS scene remains expressed as a 3D gaussians cloud but authors introduced an additional Multi-Layer Perceptron (MLP) that is going to output a corrective update on each gaussian opacity. 
+The trained GS scene remains expressed as a 3D gaussians cloud but authors introduced an additional \ac{MLP} that is going to output a corrective update on each gaussian opacity. 
 
-Indeed, each primitive has an opacity property but the latter does not depend on the viewing direction \textbf{d} we looking at during rasterization. Introducing such an MLP, termed $\Phi$ therefore aims to alter gaussian transparency in function of this viewing direction: 
+Indeed, each primitive has an opacity property but the latter does not depend on the viewing direction \textbf{d} we looking at during rasterization. Introducing such an \ac{MLP}, termed $\Phi$ therefore aims to alter gaussian transparency in function of this viewing direction: 
 
 \begin{equation}
 \Delta o_{k} = \Phi(\Sigma_{k},c_{k},\textbf{d}) 
@@ -233,7 +233,7 @@ This novel view-dependency opacity allow the pipeline we build specifically for 
 
 The alpha-blending equation, introduced in equation (\ref{eq:gs-alpha-blending}) remains unchanged to get the final rendered pixel color.
 
-Such a lightweight MLP $\Phi$ thus highly improve the light reflections and windows transparency issue we often encounter in our car scenes. In-depth quantitative figures as well as visual insights on the usefulness of such an opacity view dependency are presented in detail in section \ref{sec:exp-gs}. 
+Such a lightweight \ac{MLP} $\Phi$ thus highly improve the light reflections and windows transparency issue we often encounter in our car scenes. In-depth quantitative figures as well as visual insights on the usefulness of such an opacity view dependency are presented in detail in section \ref{sec:exp-gs}. 
 
 \subsection{Visual Hull}
 
@@ -535,7 +535,17 @@ Wheareas our 3D reconstruction pipeline is able to faithfully render and synthes
   \label{fig:floater-removed}
 \end{figure}
 
-Beyond the rendering of these unwanted gaussian primitives, rendering at non-training locations remains a challenging tak that would need to be handle during further research. Indeed, only having a sparse set of 36 views to reconstruct a whole scene remains a challenging task: public datasets on which \ac{GS} is trained on for academic purposes often have few hundreds of input images. The figure \ref{fig:nontraining-rendering} illustrates the common case we faced when we need to stabilize the $360^{\circ}$ spin of this scene. The view has to be rendered at a location that is slighly above the original training view. The 3D \ac{GS} scene is extremely well rendered at this training location, at least on the car itself (while the ground and the sky suffer from a lack of gaussian primitives in those over-reconstructed regions). Moving toward the car, at a non-training location, lead to a rendering that is far from being acceptable for an industrial application. Several artifacts and misplaced / misoriented gaussians appeared on the back of the car, leading to an blurry and fuzzy result. 
+Beyond the rendering of these unwanted gaussian primitives, rendering at non-training locations remains a challenging tak that would need to be handle during further research. Indeed, only having a sparse set of 36 views to reconstruct a whole scene remains a challenging task: public datasets on which \ac{GS} is trained on for academic purposes often have few hundreds of input images. The view has to be rendered at a location that is slighly different the original training view, as depiected on Figure \ref{fig:theory-camera-path}. 
+
+\begin{figure*}[htb!]
+  \center
+\includegraphics[width=\linewidth]{images/gaussiansplatting/theory-camera-path.png}
+\caption{\textbf{Camera path stabilization} While the original camera path associated to the input views is plotted in red, the $360^{\circ}$ spin stabilization require our 3D learned scene to be rendered at camera locations that live on the green path.}
+\label{fig:theory-camera-path}
+\end{figure*}
+
+The figure \ref{fig:nontraining-rendering} in practice illustrates this common case we faced when we need to stabilize the $360^{\circ}$ spin of this scene. T The 3D \ac{GS} scene is extremely well rendered at this training location, at least on the car itself (while the ground and the sky suffer from a lack of gaussian primitives in those over-reconstructed regions). Moving toward the car, at a non-training location, lead to a rendering that is far from being acceptable for an industrial application. Several artifacts and misplaced / misoriented gaussians appeared on the back of the car, leading to an blurry and fuzzy result. 
+
 
 \begin{figure}[htb!]
   \centering
@@ -553,8 +563,24 @@ Beyond the rendering of these unwanted gaussian primitives, rendering at non-tra
 \end{figure}
 
 \section{Current works}
-Whereas improving the 3D rendering at non-training locations remains one of the core challenges ahead for further research, current work is mostly focused toward geometrical priors integration within the \ac{GS} pipeline that was described earlier. Indeed, introducing depths and normals regularization during training enforce gaussian primitives to better model the car surface in 3D. 
-We thus currently leverage on a monocular depth [DA2] and normals estimation network to obtain these ground truth depths and normals maps. 
+
+
+Whereas improving the 3D rendering at non-training locations remains one of the core challenges ahead for further research, current work is mostly focused toward geometrical priors integration within the \ac{GS} pipeline that was described earlier. 
+
+Indeed, introducing depths and normals regularization during training enforce gaussian primitives to better model the car surface in 3D. 
+We thus currently leverage on a monocular depth \citep{ke2023repurposing,yang2024depth} and normal \citep{bae2024rethinking,ye2024stablenormal} estimation networks to obtain these \textit{pseudo} ground truth depths and normals maps and use them as prior information during training. 
+
+[Set a definition for how depth can be computed.]
+
+Gaussian 's normal might be set as an additional learnable attribute. However, we rather decided to define the normal $n_{k}$ of a gaussian primitive $\mathcal{G}_{k}$ as the outward direction given by its shortest axis. In this way, $n_{k}$ can be directly expressed (in the world coordinate system) from the scaling $s_{k}$ and quaternion $q_{k}$: 
+
+\begin{equation}
+  n_{k} = R_{k}\mathbf{e}_{\arg\min_{j}(s_k)}
+\end{equation}
+
+where $R_{k}$ correspond to the $3\times 3$ rotation matrix associated to quaternion $q_{k}$ and $e_{l}$ defines the standard basis vector (the one-hot vector) with $1$ in the \textit{l}-position and $0$ elsewhere.  
+
+Such formulation is currently allowing us to slighlty adapt the input of the \ac{VDGS} network, to only input normals and viewing direction, since both scale and a quaternion is now redundant information. 
 
 
 
