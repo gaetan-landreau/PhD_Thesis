@@ -218,49 +218,51 @@ We provide in this annex some additional information regarding the Chapter ~\ref
 \section{Dataset characteristics}
 \label{annex:epipolarnvs-dataset}
 
-Regarding the ShapeNet dataset, we decided to not use the same dataset as \citep{kim2020novel, sun2018multiview}  but rather worked with the rendered ShapeNet images from DISN \citep{xu2019disn}. It offers at least three main improvements over the ones used in \citep{kim2020novel}:
+Regarding the ShapeNet dataset, we decided not to use the same dataset as \citep{kim2020novel, sun2018multiview}, but instead worked with the rendered ShapeNet images from DISN \citep{xu2019disn}. This dataset offers at least three main improvements over those used in \citep{kim2020novel}:
 
 \begin{itemize}
     \item Intrinsic camera parameters are available. 
     \item Each object within a class has 36 different views (against 18 for the dataset provided by \cite{kim2020novel}). 
-    \item Rendered images have a non null elevation angle and the azimuth one is sampled on a regular 10°  basis. A random noise term is added on each rendered view to slightly jitter the camera pose. 
+    \item The rendered images have a non-zero elevation angle, and the azimuth angle is sampled on a regular 10° basis. A random noise term is added to each rendered view to slightly jitter the camera pose. 
 \end{itemize}
 
-Considering real-world Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} datasets, original images used in \citep{kim2020novel} also only contain extrinsic matrices, leaving apart the intrinsic information our architecture requires. We, therefore, build up our own train/test sets, with the same scenes as the ones used in \citep{kim2020novel}. Images were resized to $256\times256$ for speed-up and convenience purposes and ground-truth intrinsic matrices were adjusted accordingly. Images we work with on these real scene scenarios are more challenging than the ones used in \citep{kim2020novel,sun2018multiview} since dealing with center-cropped images discards fast-moving elements (on image borders) from the scenes.
+Considering real-world Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} datasets, the original data used in \citep{kim2020novel} only contain extrinsic matrices, leaving out the intrinsic information required by our architecture. We, therefore, built our own train/test sets using the same scenes as those in \citep{kim2020novel}. The images were resized to $256\times256$ for speed purposes, and the ground-truth intrinsic matrices were adjusted accordingly. The images we use in these real-world scenarios are more challenging than those in \citep{kim2020novel,sun2018multiview}, as dealing with center-cropped images eliminates fast-moving elements (at the image borders) from the scenes.
 
-Finally, we get consideration for the same setting used in \citep{kim2020novel} for the maximal latitude between the source and target view: full $\pm 180^{\circ}$ azimuthal range is permitted for the ShapeNet classes while a maximum of $\pm 10$ frames are considered for the real world datasets Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we}.
+Finally, we follow the same setting as in \citep{kim2020novel} for the maximum latitude between the source and target views: a full $\pm 180^{\circ}$ azimuthal range is allowed for the ShapeNet classes, while a maximum of $\pm 10$ frames is considered for the real world datasets Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we}.
 
 \section{Inference results}
-We finally present in this last part additional qualitative results from our model, on all the four datasets we have get consideration for in this study. We present for each dataset 8 different scenes or object instances. 
+
+We conclude this section by presenting additional qualitative results from our model across all four datasets considered in this study. For each dataset, we showcase 8 different scenes or object instances.
 
 \begin{figure*}[htp!]
     \begin{center}
-    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_Car.jpg}
+    \includegraphics[width=0.95\textwidth]{images/epipolarnvs/SuppMat_Car_New.png}
     \end{center}
-     \caption{Visual results from the test ShapeNet ~\cite{Shapenet} \textit{Car} class. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of ~\cite{NVS_skip}, our prediction and the target image $I_t$.}     \label{fig:add_visCar}
+     \caption{\textbf{Visual results from the test ShapeNet} \citep{xu2019disn} \textit{Car} \textbf{class}.}     
+     \label{fig:add_visCar}
 \end{figure*}
 
 \begin{figure*}[htp!]
     \begin{center}
-    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_Chair.jpg}
+    \includegraphics[width=.95\textwidth]{images/epipolarnvs/SuppMat_Chair_New.png}
     \end{center}
-     \caption{Visual results from the test ShapeNet ~\cite{Shapenet} \textit{Chair} class. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of ~\cite{NVS_skip}, our prediction and the target image $I_t$.}
+     \caption{\textbf{Visual results from the test ShapeNet} \citep{xu2019disn} \textit{Chair} \textbf{class}.}
      \label{fig:add_visChair}
 \end{figure*}
 
 \begin{figure*}[htp!]
     \begin{center}
-    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_Synthia.jpg}
+    \includegraphics[width=.95\textwidth]{images/epipolarnvs/SuppMat_Synthia_New.png}
     \end{center}
-     \caption{Visual results from the Synthia ~\cite{Synthia} test set. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of ~\cite{NVS_skip}, our prediction and the target image $I_t$.}
+     \caption{\textbf{Visual results from Synthia} \citep{ros2016synthia}.}
      \label{fig:add_visSynthia}
 \end{figure*}
 
 \begin{figure*}[htp!]
     \begin{center}
-    \includegraphics[width=.9\textwidth]{images/epipolarnvs/SuppMat_KITTI.jpg}
+    \includegraphics[width=.95\textwidth]{images/epipolarnvs/SuppMat_KITTI_New.png}
     \end{center}
-     \caption{Visual results from the KITTI ~\cite{KITTI} test set. From left to right: the source image  $I_s$, the Encoded Pose $E_{s\xrightarrow{}t}$,  the prediction of ~\cite{NVS_skip}, our prediction and the target image $I_t$.}
+     \caption{\textbf{Visual results from KITTI} \citep{geiger2012we}.}
      \label{fig:add_visKITTI}
 \end{figure*}
 
@@ -596,11 +598,11 @@ and the primitive $\mathcal{G}_{k}$ is expressed in the ray space as:
   \end{aligned}
 \end{equation}
 
-As explained in \citep{zwicker2001ewa}, one can drop the thrid row and column of  $ \Sigma^{(k)}_{ic}$ to get a 2D covariance matrix, named $\Sigma^{(k)}_{2D}$. Applying a projective transformation to any 3D gaussian primitive $\mathcal{G}_{k}$ lead to the scaled 2D gaussian primitive, termed $g_{k}$: 
+As explained in \citep{zwicker2001ewa}, one can drop the thrid row and column of  $\Sigma^{(k)}_{ic}$ to get a 2D covariance matrix, named $\Sigma^{(k)}_{2D}$. Applying a projective transformation to any 3D gaussian primitive $\mathcal{G}_{k}$ lead to the scaled 2D gaussian primitive, termed $g_{k}$: 
 
 \begin{equation}
     g_{k}(x) = \exp(-\frac{1}{2}(x-\mu^{(k)}_{2D})^{T}(\Sigma^{(k)}_{2D})^{-1}(p-\mu^{(k)}_{2D}))
-  \end{equation}
+\end{equation}
 
 with $\mu^{(k)}_{2D}= \phi(\mu_{cc}^{k})$ and $\Sigma^{(k)}_{2D}= J\Sigma^{(k)}_{cc}J^{T}$ the 2D mean and $2\times2$ covariance matric of $ g_{k}$. 
 
@@ -623,9 +625,6 @@ The normalized viewing direction $\mathbf{d}$ we looking at can thus be expresse
 \end{equation}
 
 while the $k_{l}^{m}$ are the \ac{SH}-coefficient that needs to be learned during training per gaussian primitives. 
-
-
-\end{equation}
 
 \section{Undetermined positional gradient signs in the ADC}
 \label{appendix:sign-gradient}
