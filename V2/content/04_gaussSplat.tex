@@ -544,7 +544,7 @@ Beyond the rendering of these unwanted gaussian primitives, rendering at non-tra
 \label{fig:theory-camera-path}
 \end{figure*}
 
-The figure \ref{fig:nontraining-rendering} in practice illustrates this common case we faced when we need to stabilize the $360^{\circ}$ spin of this scene. T The 3D \ac{GS} scene is extremely well rendered at this training location, at least on the car itself (while the ground and the sky suffer from a lack of gaussian primitives in those over-reconstructed regions). Moving toward the car, at a non-training location, lead to a rendering that is far from being acceptable for an industrial application. Several artifacts and misplaced / misoriented gaussians appeared on the back of the car, leading to an blurry and fuzzy result. 
+The figure \ref{fig:nontraining-rendering} in practice illustrates this common case we faced when we need to stabilize the $360^{\circ}$ spin of this scene. The 3D \ac{GS} scene is extremely well rendered at this training location, at least on the car itself (while the ground and the sky suffer from a lack of gaussian primitives in those over-reconstructed regions). Moving toward the car, at a non-training location, lead to a rendering that is far from being acceptable for an industrial application. Several artifacts and misplaced / misoriented gaussians appeared on the back of the car, leading to an blurry and fuzzy result. 
 
 
 \begin{figure}[htb!]
@@ -562,15 +562,19 @@ The figure \ref{fig:nontraining-rendering} in practice illustrates this common c
   \label{fig:nontraining-rendering}
 \end{figure}
 
-\section{Current works}
-
+\section{Current research line of work}
 
 Whereas improving the 3D rendering at non-training locations remains one of the core challenges ahead for further research, current work is mostly focused toward geometrical priors integration within the \ac{GS} pipeline that was described earlier. 
 
 Indeed, introducing depths and normals regularization during training enforce gaussian primitives to better model the car surface in 3D. 
 We thus currently leverage on a monocular depth \citep{ke2023repurposing,yang2024depth} and normal \citep{bae2024rethinking,ye2024stablenormal} estimation networks to obtain these \textit{pseudo} ground truth depths and normals maps and use them as prior information during training. 
 
-[Set a definition for how depth can be computed.]
+The discrete volume rendering approximation from Equation \eqref{eq:gs-alpha-blending} is used again to render per-pixel z-depth estimates $\hat{D}$:
+
+\begin{equation}
+  \hat{D}(x) = \sum_{k=1}^{K}d_{k}\alpha_{k}\prod_{j=1}^{k-1}(1-\alpha_{j})
+\end{equation}
+with $d_{k}$ the z-depth coordinate (in view space) of the $k^{th}$ primitive. \newline
 
 Gaussian 's normal might be set as an additional learnable attribute. However, we rather decided to define the normal $n_{k}$ of a gaussian primitive $\mathcal{G}_{k}$ as the outward direction given by its shortest axis. In this way, $n_{k}$ can be directly expressed (in the world coordinate system) from the scaling $s_{k}$ and quaternion $q_{k}$: 
 
@@ -583,10 +587,9 @@ where $R_{k}$ correspond to the $3\times 3$ rotation matrix associated to quater
 Such formulation is currently allowing us to slighlty adapt the input of the \ac{VDGS} network, to only input normals and viewing direction, since both scale and a quaternion is now redundant information. 
 
 
-
 \section{Conclusion}
 
-We develop in this last chapter a 3D reconstruction pipeline to perform \ac{NVS} for an industrial application. We leverage onto original \ac{GS} \citep{kerbl20233d} work to design a system that suits the specific requirements CarCutter has regarding $360^{\circ}$ spin stabilization. In this way, we extend the original \ac{GS} 3D reconstruction pipeline with three main components: a visual hull point cloud initialization, a view-dependent opacity computation and a better densification strategy. Each of these modules directly tackle a challenging issue that 3DGS was not able to deal with. First, the visual hull point cloud (that directly herits from silhouette-from-motion concept) enables to start the training process with more points on the surface of interest, the car we aim to reconstruct. Then, gaussian primitives opacity are made view-dependant through a tiny MLP. Such a network allow to better render reflective and/or transparent surfaces, such as windows in our study case. Finally, the densification strategy proposed by PixGS \citep{zhang2024pixel} has a significant impact when it comes to render tiny details and complex structure, by re-thinking the way gaussians should be cloned or splitted. Furthermore, such a novel \ac{ADC} strategy does not hurt training time as only a pixel area scaling term need to be computed. We extensively test our entire pipeline onto a single scene (that could have been one from a CarCutter customer) through different ablation studies and comparisons with a homography-based solution. One of the core limitation remain the rendering at non-training locations, \ie at stabilized positions in our case. Several artifacts can appear when the 3D scene is rendered at those unseen and out-of-distribution camera positions, and further works will try to adress this main limitation. 
+We develop in this last chapter a 3D reconstruction pipeline to perform \ac{NVS} for an industrial application. We leverage onto original \ac{GS} \citep{kerbl20233d} work to design a system that suits the specific requirements CarCutter has regarding $360^{\circ}$ spin stabilization. In this way, we extend the original \ac{GS} 3D reconstruction pipeline with three main components: a visual hull point cloud initialization, a view-dependent opacity computation and a better densification strategy. Each of these modules directly tackle a challenging issue that original 3D \ac{GS} was not able to deal with. First, the visual hull point cloud, enables to start the training process with more points on the surface of interest, the car we aim to reconstruct. Then, gaussian primitives opacity are made view-dependant through a \ac{MLP}. Such a network allows to better render reflective and transparent surfaces, such as windows. Finally, the densification strategy proposed by PixGS \citep{zhang2024pixel} has a significant impact when it comes to render tiny details and complex structures, by re-thinking the way gaussians should be cloned or splitted. Furthermore, such a novel \ac{ADC} strategy does not hurt training time as only a pixel area scaling term need to be computed. We extensively test our entire pipeline onto a single scene (that could have been one from a CarCutter customer) through different ablation studies and comparisons with a homography-based solution. One of the core limitation remain the rendering at non-training locations, \ie at stabilized positions in our case. Several artifacts can appear when the 3D scene is rendered at those unseen and out-of-distribution camera positions, and further works will try to adress this main limitation. 
 
 
 
