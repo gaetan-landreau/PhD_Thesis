@@ -38,7 +38,7 @@ The core idea of this work is to leverage the differentiable renderer from \cite
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%
-\section{Related works}
+\section{Related work}
 \label{sec:related_works}
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -196,13 +196,13 @@ Azimuth angles around the symmetrical pair $\{90^{\degree}, 270^{\degree}\}$ pre
 
 We also quantitatively confirm the anticipated impact of $\tau$ during the rendering process on the 2D \ac{IoU} score: the higher $\tau$ is set, the more faces we discard. 
 
-\subsection{Limitations and further work}
+\section{Limitations and further work}
 
 Our method demonstrates encouraging results in refining the topology of 3D meshes through 2D alpha mask considerations, but it has a few remaining limitations. First, the thresholding strategy we use to determine whether a face should be pruned from the 3D mesh surface requires us to set a fixed hyperparameter $\tau$, similar to what \citep{pan2019deep} did. We agree with \citep{nie2020total3dunderstanding} on the importance of relying on local 2D and 3D prior information to build a more robust thresholding strategy. Additionally, AdaptativeSR may exhibit incorrect behaviour with rendered faces close to the silhouette boundary edges. 
 
 From a broaderer perspective, our method currently relies on alpha masks and thus overlooks texture information from RGB images. While impressive 3D textured results have been achieved using UV mapping in self-supervised image-based 3D reconstruction methods with genus-0 meshes\citep{li2020self,pavllo2020convolutional}, to the best of our knowledge, no attempts have been made to advance beyond such first-order representations. Finally, since our work is agnostic to the 3D mesh reconstruction network, a next step would be to design a complete self-supervised 3D reconstruction pipeline that incorporates our topological refinement module. 
 
-\subsection{Conclusion}
+\section{Conclusion}
 \label{sec:conclusion}
 We proposed a novel approach for performing topological refinement on 3D meshes surfaces by exclusively considering 2D alpha masks and leveraging the modularity of the PyTorch3D rasterization framework. To the best of our knowledge, no prior attempts in our line of work were made in 2019/2020, as both TMN \citep{pan2019deep} and Total3D \citep{nie2020total3dunderstanding} rely on 3D-supervised neural networks for pruning faces and edges. The agnostic design of AdaptativeSR allows any self-supervised image-based 3D reconstruction pipeline(built on the PyTorch3D renderer framework) to leverage the advancements we presented in this first annex chapter for reconstructing topologically complex meshes. We achieved consistent and competitive results from a topological perspective when compared to the 3D-based pruning strategy from \citep{pan2019deep}. 
 
@@ -226,7 +226,7 @@ Considering real-world Synthia \citep{ros2016synthia} and KITTI \citep{geiger201
 
 Finally, we follow the same setting as in \citep{kim2020novel} for the maximum latitude between the source and target views: a full $\pm 180^{\circ}$ azimuthal range is allowed for the ShapeNet classes, while a maximum of $\pm 10$ frames is considered for the real world datasets Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we}.
 
-\section{Inference results}
+\section{Additional results}
 
 We conclude this section by presenting additional qualitative results from our model across all four datasets considered in this study. For each dataset, we showcase 8 different scenes or object instances.
 
@@ -292,9 +292,10 @@ with $T^{(i)} = \exp\left(-\sum_{j=1}^{i}\rho^{(j)}\delta_{j}\right)$ the accumu
 As shown in Figure \ref{fig:supp_nerfeature}, the symmetrical pixel-wise feature $f_{s,symm}^{(i)}$ is not used as input for NeRFeature $\Psi$. Integrate a 3D symmetry prior into a high-dimensional space like $\mathbb{R}^{d_{\text{feat}}}$ is more complex than in the RGB space of $\Phi$. Instead, NeRFeature only receives a 3D point location, a direction, and the source-aligned feature $f_{s}^{(i)}$ as input.
 
 \subsection{Epipolar-based feature attention}
+\label{appendix:epinerf-feature}
 This section gives additional explanations about our light feature attention mechanism.
 
-As introduced in the main paper, the target-aligned features $\mathbf{f}{t}$ and the source-aligned one $\mathbf{f}{s}^{(i)}$ are used to compute the light cross-attention score $\mathbf{s}_{a}^{(i)}$:
+As introduced in section \ref{subsec:epipolar_att} , the target-aligned features $\mathbf{f}{t}$ and the source-aligned one $\mathbf{f}{s}^{(i)}$ are used to compute the light cross-attention score $\mathbf{s}_{a}^{(i)}$:
 
 \begin{equation}
     s_{a}^{(i)} = \frac{\mathbf{q}^{T}\mathbf{k}}{\sqrt{d_{\text{feat}}}}= \frac{f_{t}^{T}\times f_{s}^{(i)}}{\sqrt{d_{\text{feat}}}}
@@ -302,7 +303,7 @@ As introduced in the main paper, the target-aligned features $\mathbf{f}{t}$ and
 \end{equation}
 while $\mathbf{s}_{a}$ denotes the entire distribution over all the points sampled along the ray \textbf{r}.
 
-However, the cross-attention distribution $\mathbf{s}_{a}$ cannot be used directly in the volume rendering equation. The distribution lacks the sharpness needed to effectively influence the volume rendering process. It must be shrunk and normalized around its maxima in a differentiable manner to produce the final distribution $\hat{\mathbf{s}_{a}}$\footnote{Simplified as $\mathbf{s}_{a}$ in the main paper for convenience.}.
+However, the cross-attention distribution $\mathbf{s}_{a}$ cannot be used directly in the volume rendering equation. The distribution lacks the sharpness needed to effectively influence the volume rendering process. It must be shrunk and normalized around its maxima in a differentiable manner to produce the final distribution $\hat{\mathbf{s}_{a}}$\footnote{Simplified as $\mathbf{s}_{a}$ in the associated chapter for convenience.}.
 
 We thus designed two scaled sigmoid functions, called $S^{k}$ and $S^{K}$ to shrink $\mathbf{s}_{a}$ : 
 
@@ -336,6 +337,7 @@ We finally illustrate on Figure \ref{fig:attention_construction} the $\alpha$-bl
 The EpiNeRF epipolar cross-attention module aims to focus on regions where the attention $\hat{\textbf{s}}_{a}$ reaches its maximum values. As observed in Figure \ref{fig:attention_construction}, the blending operation shifts the $\alpha$ distribution slightly further away along the ray than it was originally. As expressed in Equation \ref{eq:weights} and illustrated in the main paper with the Figure \ref{fig:overall_attention}, the transmittance T is naturally affected by this shift correction. 
 
 \subsection{Training details}
+\label{appendix:epinerf-training}
 Although our EpiNeRF architecture requires several intermediate training steps, we expand the training losses already expressed in Equations \ref{eq:nerfeature_loss} and \ref{eq:epinerf_loss}. Regarding NeRFeature, the L2-loss is given by: 
 
 \begin{equation}
@@ -507,7 +509,7 @@ $d_{\text{feat}} \gets 256$\;
 
 
 \section{Additional results - SRN dataset }
-
+\label{appendix:moreres-epinerf}
 Finally, we present additional visual results for EpiNeRF.
 
 The results shown in Figures \ref{fig:supp_NVScars} and \ref{fig:supp_NVSchairs} demonstrate consistently rendered novel views with fine-grained details, even from viewpoints far from the source. 
@@ -630,7 +632,7 @@ As mentioned in Section ~\ref{gs:pixgs-adc}, the per-pixel gradient $\frac{\part
 We thus already expressed such a per-pixel gradient for the x-axis as: 
 
 \begin{equation}
-    \label{eq:perpix-grad}
+    \label{eq:perpix-grad-appendix}
     \frac{\partial L_{j}}{\partial \mu^{k}_{ndc,x}} = \sum \limits_{l=1}^{3} \frac{\partial L_{j}}{\partial c_{l}^{j}}\times \frac{\partial c_{l}^{j}}{\partial \alpha_{k}^{j}} \times \frac{\alpha_{k}^{j}}{\partial \mu^{k}_{ndc,x} }
     \end{equation}
 
