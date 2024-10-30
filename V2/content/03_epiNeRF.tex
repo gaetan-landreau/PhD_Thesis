@@ -185,7 +185,7 @@ As implicly defined earlier in Equation \eqref{eq:weights}, the attention-based 
 \begin{figure}[h!]
     \begin{center}
   \includegraphics[width=\linewidth]{images/epinerf/SUPP_VR_OVERLEAF.png}
-  \caption{\textbf{Influence of our epipolar attention mechanism over the volume rendering equation.} As the $\alpha$ distribution has been blended with the cross-attention distribution from NeRFeature $\Psi$, transmittance \textbf{T} is naturally affected as well. Final weight composite distribution is thus corrected during the volume rendering process.} 
+  \caption{\textbf{Influence of our epipolar attention mechanism over the volume rendering equation.} As the $\alpha$ distribution has been blended with the cross-attention distribution from NeRFeature $\Psi$, transmittance $T$ is naturally affected as well. Final weight composite distribution is thus corrected during the volume rendering process.} 
   \label{fig:overall_attention}
   \end{center}
 \end{figure}
@@ -263,7 +263,7 @@ and
 \begin{equation}
 \label{eq:epinerf_loss}
 \begin{split}
- \min_{\zeta=\{\chi,\Phi,\Gamma\}}\sum_{i}\sum_{j}\mathcal{L}_{\zeta}\left(I_{i}^{(j)},\pi_{i}^{(j)},\Psi,\zeta \right)\hspace{.2cm}  \\ \hspace{.2cm}\mathcal{L}_{\zeta}= \sum_{\mathbf{r}\in\mathcal{R}} || c(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2}
+ \min_{\zeta=\{\chi,\Phi,\Gamma\}}\sum_{i}\sum_{j}\mathcal{L}_{\zeta}\left(I_{i}^{(j)},\pi_{i}^{(j)},\Psi,\zeta \right)\hspace{.2cm}  \\ \hspace{.2cm}\mathcal{L}_{\zeta}= \sum_{\mathbf{r}\in\mathcal{R}} || \hat{c}(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2}
 \end{split}
 \end{equation}
 
