@@ -390,29 +390,34 @@ Algorithm \ref{alg:one} outlines the training of the 2D \ac{CNN} encoder $\chi$ 
     \medskip
     \KwResult{$\chi$ trained to produce view-aligned features}
     $N_{iter},\hspace{.1cm} N_{s},\hspace{.1cm} N_{rays},\hspace{.1cm}b_{s} \gets 500{,}000,\hspace{.1cm} 64,\hspace{.1cm} 256,\hspace{.1cm} 4$ \tcp*[l]{Training hyperparameters}
-    $d_{\text{feat}} \gets 256$\;
+    $d_{\text{feat}} \gets 256$
+
     \While{$j \leq N_{iter}$}{
-        \textcolor{red!50}{[FORWARD PASS]}\;
+        \textcolor{red!50}{[FORWARD PASS]}
+
          $z_{s}\hspace{.05cm}, \textbf{F}_{s}  \gets \chi(I_{s})$ \hspace{3cm}\textcolor{gray!80}{\# 
-       [bs,$d_{\text{feat}}$] , [bs,H,W,$d_{\text{feat}}$]}\;
+       [bs,$d_{\text{feat}}$] , [bs,H,W,$d_{\text{feat}}$]}
+
         $\theta = \Gamma(z_{s})$ \tcp*{HyperNetwork $\Gamma$ forward pass}
         $\mathbf{r}(t) \gets \mathbf{o} + t\mathbf{d}$ \tcp*{Cast ray from target viewpoint}
-            \For{$1 \leq i \leq N_{s}$}{
-            $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$\hspace{3cm}\textcolor{gray!80}{\# 
-      [bs,$N_{rays}$,$N_{s}$]}\; 
-            $x^{(i)}_{symm} \gets \mathbf{M}x^{(i)}$\tcp*{3D samples symmm. (YZ) plane}
+        \For{$1 \leq i \leq N_{s}$}{
+
+            $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$\hspace{2cm}\textcolor{gray!80}{\# 
+            [bs,$N_{rays},N_{s}$]}
+
             $f_{s}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}))$ \tcp*{Get source-aligned feature from $F_{s}$}
-            $f_{s,symm}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}_{symm}))$ \tcp*{$f_{s}^{(i)}$ symmetrized counterpart}
-            $f^{(i)} = [f_{s}^{(i)} \mid f_{s,symm}^{(i)}]$\tcp*{Concatenation}
+            $f_{s,symm}^{(i)} \gets \textbf{F}_{s}(\pi(\mathbf{M}x^{(i)}))$ \tcp*{$f_{s}^{(i)}$ symmetrized counterpart}
+            $f^{(i)} = [f_{s}^{(i)} | f_{s,symm}^{(i)}]$\tcp*{Concatenation}
         
-            $\sigma^{(i)},\mathbf{c}^{(i)} \gets \Phi_{\theta}(x^{(i)},\mathbf{d},f_{s}^{(i)})$ \tcp*{NeRF $\Phi$ forward pass}
+            $\sigma^{(i)},\mathbf{c}^{(i)} \gets \Phi_{\theta}(x^{(i)},\mathbf{d},f^{(i)})$ \tcp*{NeRF $\Phi$ forward pass}
             }
-            $c \gets \sum_{i=1}^{N_{s}} T_{\sigma}^{(i)}(1-\exp(-\delta_{i}\sigma^{(i)}))\textbf{c}^{(i)}$ \textcolor{gray!80}{\# 
+            $\hat{c} \gets \sum_{i=1}^{N_{s}} T_{\sigma}^{(i)}(1-\exp(-\delta_{i}\sigma^{(i)}))\textbf{c}^{(i)}$ \textcolor{gray!80}{\# 
       [bs,$N_{rays}$,3]} \tcp*{Vol. rendering}
       \;
-      \textcolor{red!50}{[BACKWARD PASS]}\;
+      \textcolor{red!50}{[BACKWARD PASS]}
+
         $\zeta = \{\chi,\Phi,\Gamma\}$ \tcp*{Trainable architectures }
-        $\mathcal{L}_{\zeta}= \sum_{\mathbf{r}\in\mathcal{R}} || c(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2}$\tcp*{Training loss }
+        $\mathcal{L}_{\zeta}= \sum_{\mathbf{r}\in\mathcal{R}} || \hat{c}(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2}$\tcp*{Training loss }
         $\Theta_{\zeta} \gets AdamW(\theta_{\zeta},\nabla_{\theta_{\zeta}} \mathcal{L}_{\zeta})$ \tcp*{Backpropagation - Weights update}
         }
     \end{algorithm}
@@ -430,24 +435,31 @@ Algorithm \ref{alg:one} outlines the training of the 2D \ac{CNN} encoder $\chi$ 
 \medskip
 \KwResult{$\Psi$ trained to produce target-aligned features $f_{t} \in \mathbb{R}^{d_{\text{feat}}}$ from source-aligned ones.}
 $N_{iter},\hspace{.1cm} N_{s},\hspace{.1cm} N_{rays},\hspace{.1cm}b_{s} \gets 300.000,\hspace{.1cm} 96,\hspace{.1cm} 256,\hspace{.1cm} 4$ \tcp*[l]{Training hyperparameters}
-$d_{\text{feat}} \gets 256$\;
+$d_{\text{feat}} \gets 256$
+
 \While{j $\leq N_{iter}$}{
-    \textcolor{red!50}{[FORWARD PASS]}\;
+    \textcolor{red!50}{[FORWARD PASS]}
+
         \textunderscore \hspace{.05cm}, $\textbf{F}_{s}  \gets \chi(I_{s})$ \hspace{3cm}\textcolor{gray!80}{\# 
-  [bs,H,W,$d_{\text{feat}}$]}\;
-         \textunderscore \hspace{.05cm}, $\textbf{F}_{t}  \gets \chi(I_{t})$\;
+  [bs,H,W,$d_{\text{feat}}$]}
+
+         \textunderscore \hspace{.05cm}, $\textbf{F}_{t}  \gets \chi(I_{t})$
+
          $\mathbf{r}(t) \gets \mathbf{o} + t\mathbf{d}$ \tcp*{Cast ray from target viewpoint}
         \For{$1 \leq i \leq N_{s}$}{
-        $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$\hspace{3cm}\textcolor{gray!80}{\# 
-  [bs,$N_{rays}$,$N_{s}$]}\; 
+        $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$\hspace{2cm}\textcolor{gray!80}{\# 
+  [bs,$N_{rays}$,$N_{s}$]}
+
         $f_{s}^{(i)} \gets \textbf{F}_{s}(\pi(x^{(i)}))$ \tcp*{Get source-aligned feature from $F_{s}$}
+
         $\rho^{(i)},\mathbf{v}^{(i)}_{t} \gets \Psi(x^{(i)},\mathbf{d},f_{s}^{(i)})$ \tcp*{NeRFeature $\Psi$ forward pass}
         }
 
         $f_{t} \gets \sum_{i=1}^{N_{s}} T_{\rho}^{(i)}(1-\exp(-\delta_{i}\rho^{(i)}))\textbf{v}^{(i)}_{t}$ \textcolor{gray!80}{\# 
   [bs,$N_{rays}$,$d_{\text{feat}}$]} \tcp*[l]{Vol. rendering}
   \;
-  \textcolor{red!50}{[BACKWARD PASS]}\;
+  \textcolor{red!50}{[BACKWARD PASS]}
+
     $\mathcal{L}_{\Psi}= \sum_{\mathbf{r}\in\mathcal{R}} || f_{t}(\mathbf{r}) - f_{t}^{(GT)}(\mathbf{r}) ||_{2}^{2}$\tcp*{Loss - $f_{t}^{(GT)}(\mathbf{r}) =\mathbf{F}_{t}(K\mathbf{r})$}
     $\Theta_{\Psi} \gets AdamW(\theta_{\Psi},\nabla_{\theta_{\Psi}} \mathcal{L}_{\Psi})$ \tcp*{Backpropagation - Weights update}
     }
@@ -469,14 +481,17 @@ $d_{\text{feat}} \gets 256$\;
 \medskip
 \KwResult{Final EpiNeRF model for single-image NVS}
 $N_{iter},\hspace{.1cm} N_{s},\hspace{.1cm} N_{rays},\hspace{.1cm}b_{s} \gets 100.000,\hspace{.1cm} 64,\hspace{.1cm} 256,\hspace{.1cm} 4$ \tcp*[l]{Training hyperparameters}
-$d_{\text{feat}} \gets 256$\;
+$d_{\text{feat}} \gets 256$
+
 \While{j $\leq N_{iter}$}{
-    \textcolor{red!50}{[FORWARD PASS]}\;
+    \textcolor{red!50}{[FORWARD PASS]}
+    
         $z_{s}$ \hspace{.05cm}, $\textbf{F}_{s}  \gets \chi(I_{s})$ \hspace{3cm}\textcolor{gray!80}{\# 
   [bs,H,W,$d_{\text{feat}}$]} \tcp*[l]{(Alg. 1)}
          $\mathbf{r}(t) \gets \mathbf{o} + t\mathbf{d}$ \tcp*{Cast ray from target viewpoint}
          $\theta = \Gamma(z_{s})$ \tcp*{HyperNetwork $\Gamma$ forward pass}
-        \textcolor{orange!50}{[Coarse NeRF $\Phi$]}\;
+        \textcolor{orange!50}{[Coarse NeRF $\Phi$]}
+
         \For{$1 \leq i \leq N_{s}$}{
         $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$\hspace{3cm}\textcolor{gray!80}{\# 
   [bs,$N_{rays}$,$N_{s}$]}\tcp*{$t_{i}\sim$\textit{Uniform}}
@@ -491,23 +506,26 @@ $d_{\text{feat}} \gets 256$\;
         $\omega^{(i)} = T_{\sigma}^{(i)}\alpha^{(i)}$  \tcp*{Attention-corrected weights distribution}
         }
         \;
-        $c_{coarse} = \sum_{i=1}^{N_{s}}\omega^{(i)}\textbf{c}^{(i)}$ \tcp*{Coarse volume rendering}
+        $\hat{c}_{coarse} = \sum_{i=1}^{N_{s}}\omega^{(i)}\textbf{c}^{(i)}$ \tcp*{Coarse volume rendering}
         $t_{i}\sim F^{-1}(u)$ \tcp*{Impor. samp.
  of CDF $F(j)=\sum_{i=1}^{j}\omega_{i}$, $u\sim$\textit{Uniform}}
         \;
-        \textcolor{orange!50}{[Fine NeRF $\Phi$]}\;
+        \textcolor{orange!50}{[Fine NeRF $\Phi$]}
+
         \For{$1 \leq i \leq N_{s}$}{
         $x^{(i)} \gets \mathbf{o} + t_{i}\mathbf{d}$ 
+
         $x^{(i)}_{symm} \gets \mathbf{M}x^{(i)}$\tcp*{3D samples symmm. (YZ) plane}
         
         $f^{(i)} = [f_{s}^{(i)} | f_{s,symm}^{(i)}]$\tcp*{Source aligned features concatenation}
         $\sigma^{(i)},\mathbf{c}^{(i)} = \Phi_{\theta}(x^{(i)},\mathbf{d},f^{(i)})$ \tcp*{Fine NeRF $\Phi$ forward pass}
         $\omega^{(i)} = T_{\sigma}^{(i)}\alpha^{(i)}$ 
         }
-        $c_{fine} = \sum_{i=1}^{N_{s}}\omega^{(i)}\textbf{c}^{(i)}$ \tcp*{Fine volume rendering}
+        $\hat{c}_{fine} = \sum_{i=1}^{N_{s}}\omega^{(i)}\textbf{c}^{(i)}$ \tcp*{Fine volume rendering}
   \;
-  \textcolor{red!50}{[BACKWARD PASS]}\;
-    $\mathcal{L}_{\zeta}= \sum_{\mathbf{r}\in\mathcal{R}} || c_{coarse}(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2} +|| c_{fine}(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2}$\tcp*{Loss}
+  \textcolor{red!50}{[BACKWARD PASS]}
+
+    $\mathcal{L}_{\zeta}= \sum_{\mathbf{r}\in\mathcal{R}} || \hat{c}_{coarse}(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2} +|| \hat{c}_{fine}(\mathbf{r}) - c^{(GT)}(\mathbf{r}) ||_{2}^{2}$\tcp*{Loss}
     $\Theta_{\zeta} \gets AdamW(\theta_{\zeta},\nabla_{\theta_{\zeta}} \mathcal{L}_{\Psi})$ \tcp*{Backpropagation - Weights update}
     }
 \end{algorithm}
@@ -562,7 +580,7 @@ We mostly present in this last section a few mathematical proofs concerning prop
 \label{appendix:cov}
 Let's first get into the Equation \ref{eq:gs-3dcov-transfrom} that transforms the 3D covariance $\Sigma^{(k)}_{3D}$ from world to camera coordinate system.
 
-Given the linear transformation $R$ and the translation $t$, one can thus express any point $p$ in the world coordinate into its camera coordinate counter part through $p' = R\times p + t$. We thus also have the revert operation with: $p = R^{-1}\times (p' - t)$. 
+Given the linear transformation $R$ and the translation $t$, one can thus express any point $p$ in the world coordinate into its camera coordinate counter part through $p' = R\times p + t$. We thus also have the revert operation with $p = R^{-1}\times (p' - t)$. 
 
 The 3D gaussian primitive $\mathcal{G}_{k}$: 
 
@@ -572,41 +590,33 @@ The 3D gaussian primitive $\mathcal{G}_{k}$:
   
 is thus transformed through: 
 \begin{equation}
+    \label{eq:derivation_gs}
     \begin{aligned}
     \mathcal{G}_{k}(p) &= \exp \left( -\frac{1}{2} \{R^{-1}(p'-t) - R^{-1}(\mu^{(k)}_{cc} -t)\}^{T} (\Sigma^{(k)}_{3D})^{-1}\{R^{-1}(p'-t) - R^{-1}(\mu^{(k)}_{cc} -t)\}  \right) \\
     &= \exp \left( -\frac{1}{2}\{ R^{-1}(p'-\mu^{(k)}_{cc})\}^{T}(\Sigma^{(k)}_{3D})^{-1})\{ R^{-1}(p'-\mu^{(k)}_{cc})\} \right) \\
     &= \exp \left( -\frac{1}{2}(p'-\mu^{(k)}_{cc})^{T}R\times(\Sigma^{(k)}_{3D})^{-1}\times R^{-1}(p'-\mu^{(k)}_{cc})\right) \\
-    &= \exp \left( -\frac{1}{2}(p'-\mu^{(k)}_{cc})^{T}(\Sigma^{(k)}_{3D})^{-1}(p'-\mu^{(k)}_{cc})\right) \\
+    &= \exp \left( -\frac{1}{2}(p'-\mu^{(k)}_{cc})^{T}(\Sigma^{(k)}_{cc})^{-1}(p'-\mu^{(k)}_{cc})\right) \\
     \end{aligned}
 \end{equation}
 
-with thus $\Sigma^{(k)}_{cc} = R\times \Sigma^{(k)}_{3D}\times R^{-1}$. \newline
+with thus $\Sigma^{(k)}_{cc} = R\times \Sigma^{(k)}_{3D}\times R^{-T}$. \newline
 
 
 Considering the affine approximation of $\phi$, we have from Equation \eqref{eq:affine_transform}: 
 
 \begin{equation}
-  \phi(p') - \phi(\mu_{cc}) \approx J(p' - \mu_{cc})
+  \phi(p')  \approx J_{\mu_{cc}^{(k)}}p' + (\phi(\mu_{cc}^{(k)}) -  J_{\mu_{cc}^{(k)}}\mu_{cc}^{(k)})
 \end{equation}
 
-and the primitive $\mathcal{G}_{k}$ is expressed in the ray space as: 
+which is now a linear transformation. From this point, and by following exactly the steps as those derived from Equation \eqref{eq:derivation_gs}, the primitive $\mathcal{G}_{k}$ is expressed in the ray space with the mean $\phi(\mu_{cc}^{(k)})$ and covariance $J_{\mu_{cc}^{(k)}}\Sigma^{(k)}_{cc}(J_{\mu_{cc}^{(k)}})^{T}$. 
+
+As explained in \citep{zwicker2001ewa}, one can drop the thrid row and column of this latter covariance matrix to get a 2D covariance matrix, named $\Sigma^{(k)}_{2D}$. Applying a projective transformation to any 3D gaussian primitive $\mathcal{G}_{k}$ lead to the scaled 2D gaussian primitive, termed $G_{k}$: 
 
 \begin{equation}
-  \begin{aligned}
-\mathcal{G}_{k}(\phi(p')) &= \exp \left( -\frac{1}{2}(\phi(p')-\phi(\mu^{(k)}_{cc}))^{T}(\Sigma^{(k)}_{3D})^{-1}(\phi(p')-\phi(\mu^{(k)}_{cc}))\right)\\
-                        &= \exp \left( -\frac{1}{2}(J_{k}(p'-\mu^{(k)}_{cc}))^{T}(\Sigma^{(k)}_{3D})^{-1}(J_{k}(p'-\mu^{(k)}_{cc}))\right) \\
-                        &= \exp \left( -\frac{1}{2}(p'-\mu^{(k)}_{cc})^{T}J_{k}^{T}(\Sigma^{(k)}_{3D})^{-1}J_{k}(p'-\mu^{(k)}_{cc})\right)\\
-                        &= \exp \left( -\frac{1}{2}(p'-\mu^{(k)}_{cc})^{T}(J_{k}\Sigma^{(k)}_{3D}J_{k}^{T})^{-1}(p'-\mu^{(k)}_{cc})\right)
-  \end{aligned}
+    G_{k}(x) = \exp(-\frac{1}{2}(x-\mu^{(k)}_{2D})^{T}(\Sigma^{(k)}_{2D})^{-1}(p-\mu^{(k)}_{2D}))
 \end{equation}
 
-As explained in \citep{zwicker2001ewa}, one can drop the thrid row and column of  $\Sigma^{(k)}_{ic}$ to get a 2D covariance matrix, named $\Sigma^{(k)}_{2D}$. Applying a projective transformation to any 3D gaussian primitive $\mathcal{G}_{k}$ lead to the scaled 2D gaussian primitive, termed $g_{k}$: 
-
-\begin{equation}
-    g_{k}(x) = \exp(-\frac{1}{2}(x-\mu^{(k)}_{2D})^{T}(\Sigma^{(k)}_{2D})^{-1}(p-\mu^{(k)}_{2D}))
-\end{equation}
-
-with $\mu^{(k)}_{2D}= \phi(\mu_{cc}^{k})$ and $\Sigma^{(k)}_{2D}= J\Sigma^{(k)}_{cc}J^{T}$ the 2D mean and $2\times2$ covariance matric of $ g_{k}$. 
+with $\mu^{(k)}_{2D}= \phi(\mu_{cc}^{k})$ and $\Sigma^{(k)}_{2D}$ the 2D mean and $2\times2$ covariance matric of $G_{k}$. 
 
 
 \section{Spherical Harmonics: How color is made view-dependent ?}
@@ -631,13 +641,13 @@ while the $k_{l}^{m}$ are the \ac{SH}-coefficient that needs to be learned durin
 \section{Undetermined positional gradient signs in the ADC}
 \label{appendix:sign-gradient}
 
-As mentioned in Section ~\ref{gs:pixgs-adc}, the per-pixel gradient $\frac{\partial L_{j}}{\partial \mu^{k}_{ndc,x}}$ is expressed as a sum of product terms that might have different signs. 
+As mentioned in Section ~\ref{gs:pixgs-adc}, the per-pixel gradient $\frac{\partial L_{j}}{\partial \mu^{k}_{x}}$ is expressed as a sum of product terms that might have different signs. 
 
 We thus already expressed such a per-pixel gradient for the x-axis as: 
 
 \begin{equation}
     \label{eq:perpix-grad-appendix}
-    \frac{\partial L_{j}}{\partial \mu^{k}_{ndc,x}} = \sum \limits_{l=1}^{3} \frac{\partial L_{j}}{\partial c_{l}^{j}}\times \frac{\partial c_{l}^{j}}{\partial \alpha_{k}^{j}} \times \frac{\alpha_{k}^{j}}{\partial \mu^{k}_{ndc,x} }
+    \frac{\partial L_{j}}{\partial \mu^{k}_{x}} = \sum \limits_{l=1}^{3} \frac{\partial L_{j}}{\partial c_{l}^{j}}\times \frac{\partial c_{l}^{j}}{\partial \alpha^{(k)}} \times \frac{\alpha^{(k)}}{\partial \mu^{k}_{x}}
     \end{equation}
 
 \begin{itemize}
@@ -645,29 +655,21 @@ We thus already expressed such a per-pixel gradient for the x-axis as:
     \item \textbf{First term} $\frac{\partial L_{j}}{\partial c_{l}^{j}}$ 
 This partial derivative is rather straightforward as $\partial L_{j}$ define the $L_{1}$ loss function between the rendered pixel color and the ground truth one. This first term is thus either set to $+1$ or $-1$ and its sign is undertermined as soon as the difference between predicted and ground truth color can either be positive or negative. 
 
-    \item \textbf{Second term} $\frac{\partial c_{l}^{j}}{\partial \alpha_{k}^{j}}$ 
+    \item \textbf{Second term} $\frac{\partial c_{l}^{j}}{\partial \alpha^{(k)}}$ 
 The second term has to be developed to fully grasp why it also exists a sign ambiguity in its expression. Accounting on the expression of the rendered color in Equation \eqref{eq:gs-alpha-blending}, such partial derivative can thus be derived as follow. We drop here both the channel  \textit{l} as well as the pixel \textit{j} indexing for sake of clarity.  
 
 \begin{equation}
-    \frac{\partial c_{l}^{j}}{\partial \alpha_{k}} = c_{k} \times \prod \limits_{p=1}^{k-1}(1 - \alpha_{p}) - \sum \limits_{q=k+1}^{K} c_{q}\alpha_{q}\prod \limits_{p=1,p\neq q}^{q-1}(1 - \alpha_{p})
+    \frac{\partial c}{\partial \alpha^{(k)}} = c^{(k)} \times \prod \limits_{p=1}^{k-1}(1 - \alpha^{(p)}) - \sum \limits_{q=k+1}^{K} c^{(q)}\alpha^{(q)}\prod \limits_{p=1,p\neq q}^{q-1}(1 - \alpha^{(p)})
 \end{equation}
 Whearas both term are positives, their difference made such a term undetermined regarding its sign. 
 
     \item \textbf{Third term} $\frac{\partial \alpha_{k}^{j}}{\partial \mu^{k}_{ndc,x}}$ 
-This last term can directly be derived from Equation \eqref{eq:gs-alpha-def}. We still drop the indexing $j$ for clarity and the aformentioned equation can be fully developped through: 
-\begin{equation}
-    \alpha_{k}(pix) =o_{k} \times g_{k}(pix) =  o_{k} \times \exp \left( -\frac{1}{2} \mathbf{d}^T \left( \Sigma_{2D}^{(k)} \right)^{-1} \mathbf{d} \right),  
-\end{equation}
-where $\mathbf{d} = \begin{pmatrix}
-    p_x - \mu_{2D,x}^{(k)} \\
-    p_y - \mu_{2D,y}^{(k)}
-\end{pmatrix}$ and $pix=\left( p_{x},p_{y}\right)^{T}$ 
+This last term can directly be derived from Equation \eqref{eq:gs-alpha-def}. 
 
-We thus get for the last partial derivative: 
 \begin{equation}
-    \frac{\partial \alpha_{k}}{\partial \mu^{(k)}_{ndc,x}} =  o_{k} \times \frac{\partial g_{k}}{\partial \mu^{k}_{ndc,x}} = o_{k} \times g_{k} \times ((\Sigma_{2D}^{(k)})^{-1}\mathbf{d})_{x}
+    \frac{\partial \alpha^{(k)}}{\partial \mu^{k}_{x}} =  o^{(k)} \times \frac{\partial G_{k}(\mu^{k}_{x})}{\partial x} \propto o^{(k)} \times (\mu^{k}_{x} - pix_{j}) \times G_{k}(\mu^{k}_{x})
 \end{equation}
-The sign of this third and last term thus directly depends on the sign of $\mathbf{d}_{x} = p_x - \mu_{2D,x}^{(k)}$, which is undetermined. 
+with $pix_{j}$ the coordinate of the pixel $j$. The sign of this third and last term thus directly depends on the sign of the difference $\mu^{k}_{x} - pix_{j}$, which is undetermined. 
 
 \end{itemize}
 

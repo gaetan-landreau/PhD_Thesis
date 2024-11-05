@@ -102,7 +102,7 @@ We breakdown the different steps required to obtain those rendered 3D gaussians 
 
 Given any viewpoint we want to render, any 3D primitive $\mathcal{G}_{k}$ expressed in world coordinate has to be expressed in camera coordinate system first. Let's denote corresponding world-to-camera extrinsic matrix $W=[R|t]$. 
 
-The 3D mean of $\mathcal{G}_{k}$, denoted $\mu^{(k)}_{cc}$, is easly expressed through: 
+The 3D mean of $\mathcal{G}_{k}$, denoted $\mu^{(k)}_{cc}$, is easly expressed in camera coordinate (indexed $cc$) through: 
 
 \begin{equation}
   \mu^{(k)}_{cc} = R\times \mu^{(k)}_{3D}+t
@@ -128,15 +128,15 @@ However, such a projective function $\phi$ is not affine (as it was the case for
 
 \begin{equation}
   \label{eq:affine_transform}
-  \phi(p') = \approx \phi(\mu_{cc}) + \frac{\partial \phi}{\partial p'}(\mu_{cc})(p' - \mu_{cc})
+  \phi(p') \approx \phi(\mu_{cc}^{(k)}) + J_{\mu_{cc}^{(k)}}(p' - \mu_{cc}^{(k)})
 \end{equation}
 
-whereas we denote $J = \frac{\partial \phi}{\partial p'}(\mu_{cc})$ as the jacobian of the affine approximation of $\phi$. 
+whereas we denote $J_{\mu_{cc}^{(k)}} =  \frac{\partial \phi(p')}{\partial p'}|_{p' = \mu_{cc}^{(k)}}$ the jacobian of the affine approximation of $\phi$. 
 
-One can derive from $J$ and $\phi$ an expression for $\mu^{(k)}_{2D}$ and $\Sigma^{(k)}_{2D}$, the 2D projected gaussian primitive, termed  $g_{k}$, in the image space. Complete derivation is available in Appendix \ref{appendix:cov} and we thus end with: 
+One can derive from $J_{\mu_{cc}^{(k)}}$ and $\phi$ an expression for $\mu^{(k)}_{2D}$ and $\Sigma^{(k)}_{2D}$, the 2D projected gaussian primitive on the image plane, termed $G_{k}$. Complete derivation is available in Appendix \ref{appendix:cov} and we thus end with: 
 
 \begin{equation}
-  g_{k}(x) = \exp(-\frac{1}{2}(x-\mu^{(k)}_{2D})^{T}(\Sigma^{(k)}_{2D})^{-1}(p-\mu^{(k)}_{2D}))
+  G_{k}(x) = \exp(-\frac{1}{2}(x-\mu^{(k)}_{2D})^{T}(\Sigma^{(k)}_{2D})^{-1}(p-\mu^{(k)}_{2D}))
 \end{equation}
 
 3D\ac{GS} seminal work \citep{kerbl20233d} finally performs alpha blending to derive the color $\hat{c}(x)$ of the pixel: 
@@ -148,7 +148,7 @@ One can derive from $J$ and $\phi$ an expression for $\mu^{(k)}_{2D}$ and $\Sigm
 
 \begin{equation}
 \label{eq:gs-alpha-def}
-  \alpha^{(k)} = o^{(k)}g_{k}(x)
+  \alpha^{(k)} = o^{(k)}G_{k}(x)
 \end{equation}
 
 where primitive’s depth order are sorted from 1 to K. \newline
@@ -161,17 +161,17 @@ The pruning is quite simple yet effective: any 3D gaussian $\mathcal{G}_{k}$ tha
 The densification strategy requires to both address under-reconstructed areas (where an insufficient number of gaussians are presents) and over-reconstructed areas (where gaussians are too large) of the scene. Small gaussians are thus cloned in those under-reconstructed areas whereas large ones are splited into two new gaussians by leveraging on view-space positional gradients, expressed for each gaussian primitive $\mathcal{G}_{k}$ as : 
 
 \begin{equation}
-   \nabla_{\mu_{k}}L= ||\frac{\partial L_{\pi}}{\partial \mu_{k}^{\pi}}|| = \sqrt{\left(\frac{\partial L_{\pi}}{\partial \mu_{ndc,x}^{k,\pi}}\right)^{2} + \left(\frac{\partial L_{\pi}}{\partial \mu_{ndc,y}^{k,\pi}}\right)^{2}}
+   \nabla_{\mu_{k}}L= ||\frac{\partial L_{\pi}}{\partial \mu_{k}^{\pi}}|| = \sqrt{\left(\frac{\partial L_{\pi}}{\partial \mu_{x}^{k,\pi}}\right)^{2} + \left(\frac{\partial L_{\pi}}{\partial \mu_{y}^{k,\pi}}\right)^{2}}
 \end{equation}
 
-where $L_{\pi}$ denotes the loss under viewpoint $\pi$. Such a gradient magnitude is tracked and averaged over all the rendered views $\pi \in \Pi$ during 100 iterations. As soon as: 
+where $L_{\pi}$ denotes the loss under viewpoint $\pi$. For sake of clarity, indexing $2D$ is dropped in $\mu_{x}^{k,\pi}$ expression. Such a gradient magnitude is tracked and averaged over all the rendered views $\pi \in \Pi$ during 100 iterations. As soon as: 
 
 \begin{equation}
 \frac{\sum \limits_{\pi \in \Pi} ||\frac{\partial L_{\pi}}{\partial \mu_{k}^{\pi}}||}{\sum \limits_{\pi \in \Pi} 1} > \tau_{pos}
 \label{eq:adc-original}
 \end{equation}
 
-holds for gaussian primitive $\mathcal{G}_{k}$, the latter is either splited or cloned depending on its size. Largest eigenvalue of $\Sigma_{k}$ is used to status on $\mathcal{G}_{k}$ size: if such an eigenvalue is above another fixed user defined threshold, primitive is splited, cloned otherwise. \newline
+holds for gaussian primitive $\mathcal{G}_{k}$, the latter is either splited or cloned depending on its size. Largest eigenvalue of $\Sigma^{(k)}_{3D}$ is used to status on $\mathcal{G}_{k}$ size: if such an eigenvalue is above another fixed user defined threshold, primitive is splited, cloned otherwise. \newline
 
 \subsection{Training} 
 Gaussians parameters are learned during training through the vanilla \ac{SGD} optimization procedure. The corresponding loss function is expressed through: 
@@ -259,24 +259,24 @@ We present on Algorithm \ref{alg:gs-vh} the pseudo code that generates such a vi
 
 
 \subsection{Viewing Direction}
-Second bloc we get into consideration on top of the existing GS vanilla framework come from \ac{VDGS} \citep{malarz2023gaussian}. Core authors idea is to some extend mix concepts from both NeRF and GS to get the most of both framework, as depicted on Figure \ref{fig:gs-nerf}. 
+Second bloc we get into consideration on top of the existing GS vanilla framework come from \ac{VDGS} \citep{malarz2023gaussian}. Core authors idea is to some extend mix concepts from both \ac{NeRF} and 3D\ac{GS} to get the most of both framework, as depicted on Figure \ref{fig:gs-nerf}. 
 
 \begin{figure}[htpb!]
   \centering
   \begin{subfigure}[b]{0.31\linewidth}
-    \includegraphics[width=\linewidth]{images/gaussiansplatting/nerf.png}
+    \includegraphics[width=\linewidth]{images/gaussiansplatting/nerf_NEW.png}
     \caption{\textbf{NeRF-based}}
     \label{fig:nerf-ray}
   \end{subfigure}
   \quad % Space between the figures
   \begin{subfigure}[b]{0.31\linewidth}
-    \includegraphics[width=\linewidth]{images/gaussiansplatting/gs_vanilla.png}
+    \includegraphics[width=\linewidth]{images/gaussiansplatting/gs_vanilla_NEW.png}
     \caption{\textbf{GS-based}}
     \label{fig:gs-ray}
   \end{subfigure}
   \quad % Space between the figures
   \begin{subfigure}[b]{0.31\linewidth}
-    \includegraphics[width=\linewidth]{images/gaussiansplatting/gs.png}
+    \includegraphics[width=\linewidth]{images/gaussiansplatting/gs_NEW.png}
     \caption{\textbf{Ours}}
     \label{fig:gs-ray}
   \end{subfigure}
@@ -308,7 +308,7 @@ Our latest improvement of the vanilla GS framework is directly link to the way g
 
 Original \ac{ADC} strategy has several inner limitations in its current form: 
 \begin{itemize}
-    \item Per-pixel gradient involved in $\frac{\partial L_{\pi}}{\partial \mu^{k,\pi}_{ndc,x}}$ and $\frac{\partial L_{\pi}}{\partial \mu^{k,\pi}_{ndc,y}}$  have different directions. It lead to gradient collision, where the magnitude of $\frac{\partial L_{\pi}}{\partial \mu_{k}^{\pi}}$ does not reach densification threshold, even though it should. 
+    \item Per-pixel gradient involved in $\frac{\partial L_{\pi}}{\partial \mu^{k,\pi}_{x}}$ and $\frac{\partial L_{\pi}}{\partial \mu^{k,\pi}_{y}}$  have different directions. It lead to gradient collision, where the magnitude of $\frac{\partial L_{\pi}}{\partial \mu_{k}^{\pi}}$ does not reach densification threshold, even though it should. 
     \item Setting the two thresholds involved in the densification process is not intuitive: optimal threshold values might vary from a scene to another one and need to be adjusted empirically.
     \item There is no explicit control regarding the total number of gaussians a scene can reach, leading to potential out-of-memory \ac{GPU} issues during training.
 \end{itemize}
@@ -317,30 +317,28 @@ An initial sparse point cloud areas lead to large ellipsoids primitives during i
 
 \begin{figure*}[htbp!]
     \center
-  \includegraphics[width=\linewidth]{images/gaussiansplatting/adc_limitation.png}
+  \includegraphics[width=\linewidth]{images/gaussiansplatting/adc_limitation_NEW.png}
   \caption{\textbf{ADC gradient collision.} It might occurred that large gaussians ends with low magnitude gradient, preventing the densification to happen.}
   \label{fig:adc-limitation}
 \end{figure*}
-
-
 
 To ease notation, we discard viewpoint $\pi$ and denote: 
 
 \begin{equation}
 \label{eq:grad-inter}
-    g_{k,x} = \frac{\partial L}{\partial \mu^{k}_{ndc,x}} = \sum \limits_{j=1}^{m} \frac{\partial L_{j}}{\partial \mu^{k}_{ndc,x}} 
+    g_{k,x} = \frac{\partial L}{\partial \mu^{k}_{x}} = \sum \limits_{j=1}^{m_{k}} \frac{\partial L_{j}}{\partial \mu^{k}_{x}} 
 \end{equation}
 
-the x-axis gradient, with the per-pixel gradient expression: 
+the x-axis gradient and $m_{k}$ the number of pixels covered by the primitive $G_{k}$. The per-pixel gradient expression is given by: 
 
 \begin{equation}
 \label{eq:perpix-grad}
-\frac{\partial L_{j}}{\partial \mu^{k}_{ndc,x}} = \sum \limits_{l=1}^{3} \frac{\partial L_{j}}{\partial c_{l}^{j}}\times \frac{\partial c_{l}^{j}}{\partial \alpha_{k}^{j}} \times \frac{\alpha_{k}^{j}}{\partial \mu^{k}_{ndc,x} }
+\frac{\partial L_{j}}{\partial \mu^{k}_{x}} = \sum \limits_{l=1}^{3} \frac{\partial L_{j}}{\partial c_{l}^{j}}\times \frac{\partial c_{l}^{j}}{\partial \alpha^{(k)}} \times \frac{\alpha^{(k)}}{\partial \mu^{k}_{x} }
 \end{equation}
 
-where $c_{l}^{j}$ refers to the color of the $l^{th}$ channel of the pixel $j$. The three different partial derivatives from equation \eqref{eq:perpix-grad} might have different signs, affecting $\frac{\partial L_{j}}{\partial \mu^{k}_{ndc,x}}$ from equation (\ref{eq:grad-inter}). Complete proof can be found in appendix section \ref{appendix:sign-gradient}. The more we sum over a large number of pixel, the more likely $\frac{\partial L}{\partial \mu^{k}_{ndc,x}}$ is prone to get closed to zero, preventing $\nabla_{\mu_{k}}L$ to be higher than $\tau_{pos}$ during the iteration cycle, as shown on Figure \ref{fig:adc-limitation}. 
+where $c_{l}^{j}$ refers to the color of the $l^{th}$ channel of the pixel $j$. The three different partial derivatives from equation \eqref{eq:perpix-grad} might have different signs, affecting $\frac{\partial L_{j}}{\partial \mu^{k}_{x}}$ from equation (\ref{eq:grad-inter}). Complete proof can be found in appendix section \ref{appendix:sign-gradient}. The more we sum over a large number of pixel, the more likely $\frac{\partial L}{\partial \mu^{k}_{x}}$ is prone to get closed to zero, preventing $\nabla_{\mu_{k}}L$ to be higher than $\tau_{pos}$ during the iteration cycle, as shown on Figure \ref{fig:adc-limitation}. 
 
-PixGS tackles this gradient collision by re-weighting equation (\ref{eq:adc-original}) with the number of pixels $m_{k}$ covered by each primitives $\mathcal{G}_{k}$: 
+PixGS tackles this gradient collision by re-weighting equation (\ref{eq:adc-original}): 
 
 \begin{equation}
 \frac{\sum \limits_{\pi \in \Pi} m_{k}^{\pi} ||\frac{\partial L_{\pi}}{\partial \mu_{k}}||}{\sum \limits_{\pi \in \Pi}m_{k}^{\pi}} > \tau_{pos}
@@ -352,7 +350,7 @@ PixelGS re-weighting strategy is illustrated on Figure \ref{fig:pixgs-adc}.
 
 \begin{figure*}[htbp!]
     \center
-  \includegraphics[width=\linewidth]{images/gaussiansplatting/pixgs_implem_improvement.png}
+  \includegraphics[width=\linewidth]{images/gaussiansplatting/pixgs_implem_improvement_NEW.png}
   \caption{\textbf{PixGS ADC correction.} By accounting on the number of pixel covered by a primitive, large gaussians with a large gradient are more likely to reach the density threshold $\tau_{pos}$.}
   \label{fig:pixgs-adc}
 \end{figure*}

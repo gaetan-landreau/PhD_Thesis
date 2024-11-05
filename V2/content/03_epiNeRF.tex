@@ -124,7 +124,7 @@ We present the various stages of EpiNeRF and describe how each has been trained 
 
 \begin{figure*}[htb!]
     \begin{center}
-  \includegraphics[width=\linewidth]{images/epinerf/overview_3DVarchitecture.png}
+  \includegraphics[width=\linewidth]{images/epinerf/overview_architecture_NEW.png}
   \end{center}
   \caption{\textbf{Overview of our complete EpiNeRF architecture.} \textit{(Top left)} A pre-trained \ac{CNN} $\chi$ is used as teacher model to instruct a NeRF student model $\Psi$, termed NeRFeature, to generate deep features from any target viewpoint. \textit{(Top right)} Given the predicted target-aligned feature from $\Psi$, a light cross-attention score distribution is computed with all the source-aligned features to correct the weights sampling distribution. It forms our epipolar attention-based model. \textit{(Bottom)} EpiNeRF is finally fine-tuned with the epipolar attention-based mechanism, that adjusts the volume rendering equation through $\Psi$.}
   \label{fig:overview}
