@@ -10,7 +10,7 @@ Over the past few years, significant advancements have been made in \ac{NVS} fro
 
 \section{Introduction}
 % [1st paragraph] - Why is the problem important. 
-\ac{NVS} is a crucial computer vision problem due to its wide range of applications in fields such as \ac{VR},\ac{AR} or 3D reconstruction. Few-shot \ac{NVS} aims to generate images from unobserved viewpoints using only a limited number of source images and their corresponding camera pose information.
+\ac{NVS} is a crucial computer vision problem due to its wide range of applications in fields such as \ac{VR}, \ac{AR} or 3D reconstruction. Few-shot \ac{NVS} aims to generate images from unobserved viewpoints using only a limited number of source images and their corresponding camera pose information.
 
 % [2nd paragraph] - Why is the problem difficult. 
 Single-image \ac{NVS} is inherently ill-posed, as a single view may not provide sufficient visual information to generate a novel viewpoint. Handling unforeseen elements as well as occlusions becomes particularly hard in this context. Leveraging 3D priors \citep{saito2019pifu,johari2022geonerf} is essential for addressing these challenges, as it enables deep architectures to gain a fundamental understanding of the underlying 3D scene structure.
@@ -22,7 +22,7 @@ Recent works \citep{yu2021pixelnerf,li2022symmnerf,lin2023vision} leveraging gen
 Our work therefore tries to address such a limitation in two main stages. First by producing target-aligned features from a feature radiance field, learn by distilling pre-trained 2D \ac{CNN} features into a 3D \ac{NeRF}. These target-oriented features are then involved (with their source-aligned counterparts) in a light epipolar attention-based mechanism. The weights sampling distribution that took place in the volume rendering procedure is shrunk around regions where source and target features match, allowing a better spatial 3D points sampling.
 
 % [4th paragraph] - Give the important technical details
-As depicted in Figure \ref{fig:overview}, the training of our complete EpiNeRF architecture \textit{(bottom part)} involves two main stages.  First, the feature radiance field, called NeRFeature, is trained through a feature distillation process \textit{(top-left)}. Then, the light epipolar attention-based module \textit{(top-right)} is introduced. These two preliminary steps allows EpiNeRF to finally be fine-tuned with the epipolar attention module, which uses the target-aligned features from NeRFeature to refine the volume rendering equation and emphasize on 3D points where source and target features align.
+As depicted in Figure \ref{fig:overview}, the training of our complete EpiNeRF architecture \textit{(bottom part)} involves two main stages.  First, the feature radiance field, called NeRFeature, is trained through a feature distillation process \textit{(top-left)}. Then, the light epipolar attention-based module \textit{(top-right)} is introduced. These two preliminary steps allow EpiNeRF to finally be fine-tuned with the epipolar attention module, which uses the target-aligned features from NeRFeature to refine the volume rendering equation and emphasize on 3D points where source and target features align.
  
 % [5th paragraph] -How do you evaluate your method ? What are the most impressive results ?
 We evaluate EpiNeRF against several state-of-the-art methods on both synthetic (ShapeNet-SRN \citep{sitzmann2019scene}) and real-world (Standford Cars \citep{krause20133d}) datasets. In contrast to previous methods that rely solely on those source-view features, our feature epipolar attention module effectively accounts for occlusions through its target-aligned feature considerations. 
@@ -45,7 +45,7 @@ Our contributions are threefold and can be summarised as follows:
 
 However, above formulation prevents \ac{NeRF} networks to generalize across multiple scenes. Many recent works use deep feature volumes to condition their neural architecture ~\citep{wang2021ibrnet,chen2023matchnerf} in few-shots \ac{NVS}. PixelNeRF ~\citep{yu2021pixelnerf} is one of the first works to address these limitations in single-image \ac{NVS} by locally conditioning its radiance field with pixel-wise, source-aligned features from a \ac{CNN} encoder-decoder. This \textit{local}, input based conditioning is now widely adopted in the devoted literature \citep{jang2021codenerf,li2022symmnerf,lin2023vision}.
 
-\noindent\textbf{Feature distillation in NeRF.} A radiance field can be extended to output features beyond the RGB space, as long as a corresponding supervisory signal exists for the training phase. Work from \citep{hinton2015distilling} lay the ground for feature distillation by focusing on knowledge transfer and model compression issues. Few other methods already distill feature from 2D models (such as \ac{CNNs} or {ViT} \citep{dosovitskiy2020vit}) into 3D using neural radiance fields \citep{kobayashi2022decomposing}. While \citep{ye2023featurenerf} learn a radiance field  by distilling feature from a 2D foundation model \citep{oquab2023dinov2}, we propose a lighter feature distillation procedure. 
+\noindent\textbf{Feature distillation in NeRF.} A radiance field can be extended to output features beyond the RGB space, as long as a corresponding supervisory signal exists for the training phase. Work from \citep{hinton2015distilling} lay the ground for feature distillation by focusing on knowledge transfer and model compression issues. Few other methods already distill feature from 2D models (such as \ac{CNN} or {ViT} \citep{dosovitskiy2020vit}) into 3D using neural radiance fields \citep{kobayashi2022decomposing}. While \citep{ye2023featurenerf} learn a radiance field  by distilling feature from a 2D foundation model \citep{oquab2023dinov2}, we propose a lighter feature distillation procedure. 
 
 \section{Background: Neural Radiance Fields}
 
@@ -54,7 +54,7 @@ However, above formulation prevents \ac{NeRF} networks to generalize across mult
 
 \subsection{General overview}
 
-Given a 3D point in world space $\mathbf{X} \in \mathbb{R}^{3}$ along a ray and its viewing direction $\mathbf{d} \in \mathbb{R}^{3}$, a vanilla RGB \ac{NeRF} is defined through a density $\sigma(\mathbf{X})\in \mathbb{R}_{+}$  and a RGB colour $c(\mathbf{X},\mathbf{d}) \in \mathbb{R}^{3}$. A radiance field models a scene as a continuous function $F_{\theta}$ that predicts both the color and density of points in 3D space: 
+Given a 3D point in world space $\mathbf{X} \in \mathbb{R}^{3}$ along a ray and its viewing direction $\mathbf{d} \in \mathbb{R}^{3}$, a vanilla RGB \ac{NeRF} is defined through a density $\sigma(\mathbf{X})\in \mathbb{R}_{+}$  and an RGB colour $c(\mathbf{X},\mathbf{d}) \in \mathbb{R}^{3}$. A radiance field models a scene as a continuous function $F_{\theta}$ that predicts both the color and density of points in 3D space: 
 
 \begin{equation}
   F_{\theta}(\mathbf{X},\mathbf{d}) = c,\sigma
@@ -69,19 +69,19 @@ To synthesize images from novel viewpoints, \ac{NeRF} employs a differentiable v
   \hat{c}(\mathbf{r}) = \int_{t_n}^{t_f} T(t) \cdot \sigma(\mathbf{r}(t)) \cdot c(\mathbf{r}(t),\mathbf{d}) dt
 \end{equation}
 
-with: 
+\noindent with: 
 
 \begin{equation}
-  T(t) = 1 - e^{-\int_{t_n}^{t}\sigma(\mathbf{r}(s)ds)}
+  T(t) = e^{-\int_{t_n}^{t}\sigma(\mathbf{r}(s))ds}
 \end{equation}
 
-the accumulated transmittance, which accounts for the attenuation of light due to the medium, along the ray $\mathbf{r}$.  The pair $[t_{n},t_{f}]$ defines the near and far bound of the ray. This volume rendering equation means that color observed at a specific pixel location is a weighted summation of the contributions from all the points along the ray. The density $\sigma$ somehow simulates the physical properties of light as it travels through the scene. Higher density values indicate more opaque materials that scatter light, while lower values correspond to transparent materials.  
+\noindent the accumulated transmittance, which accounts for the attenuation of light due to the medium, along the ray $\mathbf{r}$.  The pair $[t_{n},t_{f}]$ defines the near and far bound of the ray. This volume rendering equation means that color observed at a specific pixel location is a weighted summation of the contributions from all the points along the ray. The density $\sigma$ somehow simulates the physical properties of light as it travels through the scene. Higher density values indicate more opaque materials that scatter light, while lower values correspond to transparent materials.  
 
 To render a view from such a radiance field, one need to estimate $\hat{c}(\mathbf{r})$ for each camera ray traced through the pixels of the target camera. 
 
 \subsection{Discretized formulation}
 
-Such an integral defined in Equation \eqref{eq:vr-nerf} has to numerically be approximated through quadrature. A stratified sampling approach has thus been implemented in the seminal \ac{NeRF} paper \citep{mildenhall2020nerf} to split the interval $[t_{n},t_{f}]$ into $N_c$ evenly-spaced bins, where $N_c$ points, termed $\mathbf{X}^{(i)}$, are uniformly sampled within each interval: 
+Such an integral defined in Equation \eqref{eq:vr-nerf} has to be approximated numerically through quadrature. A stratified sampling approach has thus been implemented in the seminal \ac{NeRF} paper \citep{mildenhall2020nerf} to split the interval $[t_{n},t_{f}]$ into $N_c$ evenly-spaced bins, where $N_c$ points, termed $\mathbf{X}^{(i)}$, are uniformly sampled within each interval: 
 
 \begin{equation}
   \mathbf{X}^{(i)} \sim \mathcal{U}\left[ t_{n} + \frac{i-1}{N_c}(t_{f} - t_{n}),t_{n} + \frac{i}{N_c}(t_{f} - t_{n}) \right]
@@ -93,7 +93,7 @@ The composite RGB color $\hat{c}$ along the ray is thus discretized and computed
 \hat{c}(\mathbf{r})  = \sum_{i=1}^{N_c}T^{(i)}\alpha^{(i)}c(\mathbf{X}^{(i)},\mathbf{d}) = \sum_{i} \omega^{(i)}c(\mathbf{X}^{(i)},\mathbf{d})
 \end{equation}
 
-with: 
+\noindent with: 
 \begin{equation}
 \alpha^{(i)} = (1-\exp^{-\sigma(\mathbf{X}^{(i)})\delta_{i}})
 \end{equation}
@@ -113,7 +113,7 @@ in the final composite RGB color $\hat{c}$ is therefore interpreted as the likel
 
 \subsection{Hierarchical volume sampling}
 
-\ac{NeRF}'s authors found in their original experiments that stratified sampling was unsufficient to densely sample the 3D scene. Indeed, solely quering $N_{c}$ points along ray might leave regions unexplored or occluted. Increasing the number of bins might appear inefficient from a computational perspective since too many points could be sampled and queried on empty areas. The hierarchical volume sampling strategy tries to tackle such a drawback by re-distributing sampled points along rays in proportion to their anticipated impact on the final rendering. 
+\ac{NeRF}'s authors found in their original experiments that stratified sampling was unsufficient to densely sample the 3D scene. Indeed, solely quering $N_{c}$ points along ray might leave regions unexplored or occluded. Increasing the number of bins might appear inefficient from a computational perspective since too many points could be sampled and queried on empty areas. The hierarchical volume sampling strategy tries to tackle such a drawback by re-distributing sampled points along rays in proportion to their anticipated impact on the final rendering. 
 
 The piece-wise constant probability density function obtained from the normalized weights $\omega^{(i)}/ \sum_{j=1}^{N_c}\omega^{(j)}$ distribution is threfore used to sample a second set of $N_f$ points, using inverse transform sampling.
 
@@ -142,9 +142,9 @@ For any 3D point $\mathbf{X}^{(i)}$ expressed in the world coordinate system alo
     \label{eq:projection}
 \end{equation}
 
-the source-aligned feature that was extracted from $\mathbf{F}_{s}=\chi(I_{s})$ through the perspective projection $\pi$ of $\mathbf{X}^{(i)}$ on the feature plane.
+\noindent the source-aligned feature that was extracted from $\mathbf{F}_{s}=\chi(I_{s})$ through the perspective projection $\pi$ of $\mathbf{X}^{(i)}$ on the feature plane.
 
-As $\Psi$ must be generalizable (\textit{i.e} render meaningful features for unseen objects or scene), NeRFeature has to be conditioned with such an source oriented feature $f_{s}^{(i)}$. The complete formulation for $\Psi$ is therefore given by:
+As $\Psi$ must be generalizable (\textit{i.e} render meaningful features for unseen objects or scene), NeRFeature has to be conditioned with such a source oriented feature $f_{s}^{(i)}$. The complete formulation for $\Psi$ is therefore given by:
 
 \begin{equation}
     \Psi(\mathbf{x}^{(i)},\mathbf{d},f_{s}^{(i)}) = (\rho^{(i)},\mathbf{v}_{t}^{(i)}) \in \mathbb{R}_{+}\times \mathbb{R}^{d_{\text{feat}}}
@@ -152,14 +152,14 @@ As $\Psi$ must be generalizable (\textit{i.e} render meaningful features for uns
 
 The target-aligned feature $\mathbf{f}_{t}$ is obtained through the vanilla volume rendering equation, which is computed over the $N_s$ sampled points on \textbf{r}, as expressed in Equation \eqref{eq:main_nerf}.
 
-This learned feature field is queried during the fine-tuning phase (see \textit{bottom} part of Figure \ref{fig:overview} ) to render the target-aligned features used in our epipolar attention-based volume rendering mechanism (see Section \ref{subsec:epipolar_att}). 
+This learned feature field is queried during the fine-tuning phase (see \textit{bottom} part of Figure \ref{fig:overview}) to render the target-aligned features used in our epipolar attention-based volume rendering mechanism (see Section \ref{subsec:epipolar_att}). 
 
 \subsection{Feature-based epipolar attention}
 \label{subsec:epipolar_att}
 
 Once deep features from $\chi$ has been distilled into the NeRFeature $\Psi$, target-aligned features can be synthesized using only a source-aligned feature. 
 
-Target-aligned $\mathbf{f}_{t}$ (\textit{key} \textbf{k}) and source-aligned features $\mathbf{f}_{s}^{(i)}$(\textit{queries} \textbf{q}) form a light the cross-attention \citep{vaswani2017attention} $\mathbf{s}_{a}^{(i)}$ score:
+Target-aligned $\mathbf{f}_{t}$ (\textit{key} \textbf{k}) and source-aligned features $\mathbf{f}_{s}^{(i)}$(\textit{queries} \textbf{q}) form a light cross-attention \citep{vaswani2017attention} $\mathbf{s}_{a}^{(i)}$ score:
 
 \begin{equation}
     s_{a}^{(i)} = \frac{\mathbf{q}^{T}\mathbf{k}}{\sqrt{d_{\text{feat}}}}= \frac{f_{t}^{T}\times f_{s}^{(i)}}{\sqrt{d_{\text{feat}}}}
@@ -268,7 +268,7 @@ and
 \end{equation}
 
 
-where $c^{(GT)}(\mathbf{r})$ represents the ground truth pixel that was sampled on $\mathbf{I}_{t}$, and $f^{(GT)}(\mathbf{r})$ the \textit{pseudo} ground truth target-aligned feature that was sampled from $F_{t}=\chi(I_{t})$. Deep features produced by NeRFeature are implicitly conditioned by $\chi$ since the source aligned feature $f_s^{(i)}$ is fed as input. A full and explicit formulation of these losses  is provided in appendix \ref{appendix:epinerf-training}. 
+\noindent where $c^{(GT)}(\mathbf{r})$ represents the ground truth pixel that was sampled on $\mathbf{I}_{t}$, and $f^{(GT)}(\mathbf{r})$ the \textit{pseudo} ground truth target-aligned feature that was sampled from $F_{t}=\chi(I_{t})$. Deep features produced by NeRFeature are implicitly conditioned by $\chi$ since the source aligned feature $f_s^{(i)}$ is fed as input. A full and explicit formulation of these losses  is provided in appendix \ref{appendix:epinerf-training}. 
 
 \section{Experiments}
 \label{subsec:epinerf/experiments}
@@ -366,7 +366,7 @@ Figure \ref{fig:ablation} provides visual insights from Table \ref{tab:ablation}
 \end{figure}  
 
 
-\subsection{Additional results - Standford Cars dataset }
+\subsection{Additional results - Stanford Cars dataset }
 We finally evaluate our EpiNeRF architecture using real-world images from the Stanford Cars dataset  \citep{krause20133d}. First, raw images were segmented with the state-of-the-art segmentation model SAM \citep{kirillov2023segment}. These background-free images were then scaled and centered to match the ShapeNet-SRN image structure. Although such a testing scenario is far from the one our architecture has been trained for, Figure \ref{fig:res_Stanfordcar} demonstrates that EpiNeRF produces sharper results compared to SymmNeRF \citep{li2022symmnerf}, even though reliable camera pose information is missing.
 
 

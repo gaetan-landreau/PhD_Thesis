@@ -16,7 +16,7 @@ Performing per-vertex displacements on a 3D mesh only affects its geometry, leav
 \section{Introduction}
 \label{appendix:adaptativesr-intro}
 
-Humans learn from an early age to perceive their 3D surroundings, giving them strong cognitive abilities to mentally infer a 3D scene from a single 2D image. This task is far more challenging in computer vision, as there is no way for a 2D image to losslessly store the information contained in a 3D scene. While image-based 3D reconstruction has been approached for decades in computer vision and graphics with robust and renowned techniques like \ac{SFM} \citep{longuet1981computer}, recent learning-based approaches address the problem from a new perspective by making extensive use of deep neural networks
+Humans learn from an early age to perceive their 3D surroundings, giving them strong cognitive abilities to mentally infer a 3D scene from a single 2D image. This task is far more challenging in computer vision, as there is no way for a 2D image to losslessly store the information contained in a 3D scene. While image-based 3D reconstruction has been approached for decades in computer vision and graphics with robust and renowned techniques like \ac{SfM} \citep{longuet1981computer}, recent learning-based approaches address the problem from a new perspective by making extensive use of deep neural networks
 \citep{kanazawa2018learning,deng2019accurate,saito2020pifuhd}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -77,7 +77,7 @@ Detecting these faces can be accomplished by computing an \ac{IoU} score between
     \tau=Q_{\tau}({\gamma/\Gamma})
 \end{equation}
 
-with ${\gamma/\Gamma}$ the \ac{IoU} distribution score and $\tau \in [0,1]$. Similar to the thresholding strategy employed by \citep{pan2019deep}, the value of $\tau$ directly influences the number of pruned faces: the smaller $\tau$ is, the smaller the number of faces detected as incorrectly projected will be.
+\noindent with ${\gamma/\Gamma}$ the \ac{IoU} distribution score and $\tau \in [0,1]$. Similar to the thresholding strategy employed by \citep{pan2019deep}, the value of $\tau$ directly influences the number of pruned faces: the smaller $\tau$ is, the smaller the number of faces detected as incorrectly projected will be.
 
 \subsection{Topological refinement}
 We implement our topological refinement strategy using the renderer from PyTorch3D \citep{ravi2020accelarating}. Its modularity is particularly valuable, as it allows the entire rendering process to be  be adjusted as needed. In our work, we  focused on the rasterization stage due to its similarity with the one from SoftRasterizer \citep{liu2019soft}. 
@@ -89,7 +89,7 @@ We denote by $\mathbf{P}\in \mathbb{R}^{K \times H \times W}$ the intermediate p
     \mathbf{P}[k,p_{i}]=\left(1+e^{-d(f_{k}^{i},p_{i})/\sigma}\right)^{-1} 
 \end{equation}
 
-where $d(f_{k}^{i},p_{i})$ stands for the Euclidean distance between $p_i$ and $f_{k}^{i}$. Term $\sigma$ is a hyperparameter that controls the sharpness of the rendered silhouette image. Both $d$ and $\sigma$ were originally defined in SoftRasterizer \citep{liu2019soft}. \newline
+\noindent where $d(f_{k}^{i},p_{i})$ stands for the Euclidean distance between $p_i$ and $f_{k}^{i}$. Term $\sigma$ is a hyperparameter that controls the sharpness of the rendered silhouette image. Both $d$ and $\sigma$ were originally defined in SoftRasterizer \citep{liu2019soft}. \newline
 
 We adopt the same soft silhouette shader stage introduced in SoftRasterizer to generate the soft silhouette mask $\hat{S}$ from $\mathbf{P}$ through the aggregation function:
 
@@ -217,7 +217,7 @@ We provide some additional information regarding the Chapter ~\ref{chapter:epipo
 \section{Dataset characteristics}
 \label{annex:epipolarnvs-dataset}
 
-We decided not to use the same ShapeNet dataset version as \citep{kim2020novel, sun2018multiview} used in their work. We worked with the rendered ShapeNet images from DISN \citep{xu2019disn}. This dataset offers at least three main improvements over the one used in \citep{kim2020noveln,sun2018multiview}:
+We decided not to use the same ShapeNet dataset version as \citep{kim2020novel, sun2018multiview} used in their work. We worked with the rendered ShapeNet images from DISN \citep{xu2019disn}. This dataset offers at least three main improvements over the one used in \citep{kim2020novel,sun2018multiview}:
 
 \begin{itemize}
     \item Intrinsic camera parameters are available. 
@@ -351,7 +351,7 @@ Although our EpiNeRF architecture requires several intermediate training steps, 
 \end{split}
 \end{equation}
 
-with $\mathbf{F}_{t} = \chi(I_{t})$. The final target-aligned deep feature $f_{t}$ is expressed in Equation \ref{eq:ft_vr}. \newline
+\noindent with $\mathbf{F}_{t} = \chi(I_{t})$. The final target-aligned deep feature $f_{t}$ is expressed in Equation \ref{eq:ft_vr}. \newline
 
 Concerning EpiNeRF final training, we get the loss function: 
 
@@ -553,7 +553,7 @@ The results shown on Figures \ref{fig:supp_NVScars} and \ref{fig:supp_NVSchairs}
   \end{center}
 \end{figure}
 
-Figures \ref{fig:supp_cars} and \ref{fig:supp_chairs} show additional side-by-side renderings against state-of-the-art methods. As mentioned in Chapter \ref{chapter:epinerf}, EpiNeRF managed to better handle occlusions or unseen parts in view generation compared to current state-of-the-art methods thanks to its consideration for target-aligned features. Armrests and door paintings are rendered with sharper details. EpiNeRF achieves these \ac{NVS} performances without requiring a large \ac{GPU} cluster for training, unlike VisionNeRF \cite{lin2023vision}.
+Figures \ref{fig:supp_cars} and \ref{fig:supp_chairs} show additional side-by-side renderings against state-of-the-art methods. As mentioned in Chapter \ref{chapter:epinerf}, EpiNeRF managed to better handle occlusions or unseen parts in view generation compared to current state-of-the-art methods thanks to its consideration for target-aligned features. Armrests and door paintings are rendered with sharper details. EpiNeRF achieves these \ac{NVS} performances without requiring a large \ac{GPU} cluster for training, unlike VisionNeRF \citep{lin2023vision}.
 
 \begin{figure*}[htp!]
     \begin{center}
@@ -599,7 +599,7 @@ is thus transformed through:
     \end{aligned}
 \end{equation}
 
-with thus $\Sigma^{(k)}_{cc} = R\times \Sigma^{(k)}_{3D}\times R^{-T}$. \newline
+with thus $\Sigma^{(k)}_{cc} = R\times \Sigma^{(k)}_{3D}\times R^{T}$. \newline
 
 
 Considering the affine approximation of $\phi$, we have from Equation \eqref{eq:affine_transform}: 
@@ -610,7 +610,7 @@ Considering the affine approximation of $\phi$, we have from Equation \eqref{eq:
 
 which is now a linear transformation. From this point, and by following exactly the steps as those derived from Equation \eqref{eq:derivation_gs}, the primitive $\mathcal{G}_{k}$ is expressed in the ray space with the mean $\phi(\mu_{cc}^{(k)})$ and covariance $J_{\mu_{cc}^{(k)}}\Sigma^{(k)}_{cc}(J_{\mu_{cc}^{(k)}})^{T}$. 
 
-As explained in \citep{zwicker2001ewa}, one can drop the thrid row and column of this latter covariance matrix to get a 2D covariance matrix, named $\Sigma^{(k)}_{2D}$. Applying a projective transformation to any 3D gaussian primitive $\mathcal{G}_{k}$ lead to the scaled 2D gaussian primitive, termed $G_{k}$: 
+As explained in \citep{zwicker2001ewa}, one can drop the thrid row and column of this latter covariance matrix to get a 2D covariance matrix, named $\Sigma^{(k)}_{2D}$. Applying a projective transformation to any 3D Gaussian primitive $\mathcal{G}_{k}$ leads to the scaled 2D Gaussian primitive, termed $G_{k}$: 
 
 \begin{equation}
     G_{k}(x) = \exp(-\frac{1}{2}(x-\mu^{(k)}_{2D})^{T}(\Sigma^{(k)}_{2D})^{-1}(p-\mu^{(k)}_{2D}))
@@ -622,7 +622,7 @@ with $\mu^{(k)}_{2D}= \phi(\mu_{cc}^{k})$ and $\Sigma^{(k)}_{2D}$ the 2D mean an
 \section{Spherical Harmonics: How color is made view-dependent ?}
 \label{appendix:gs-sh}
 
-A gaussian primitive $\mathcal{G}_{k}$ do not store the color information through an RGB value. Authors from 3D\ac{GS} rather made color view-dependent by relying on \ac{SH} functions. 
+A Gaussian primitive $\mathcal{G}_{k}$ does not store the color information through an RGB value. Authors from 3D\ac{GS} rather made color view-dependent by relying on \ac{SH} functions. 
 
 The normalized viewing direction $\mathbf{d}$ we looking at can thus be expressed in spherical coordinates through the pair of angles $(\theta,\phi)$. From there, \ac{SH} functions are defined on sphere surface with \textit{l} bands and $-l \leq  m \leq l$ elementary functions $Y_{l}^{m}$ within each band.
 
@@ -630,13 +630,13 @@ The normalized viewing direction $\mathbf{d}$ we looking at can thus be expresse
     Y_{l}^{m}(\theta,\phi) = \frac{(-1)^{l}}{2^{l}l!} \times \sqrt{\frac{(2l+1)(l+m)!}{4\pi(l-m)!}}e^{im\phi}(sin(\theta))^{-m}\frac{d^{l-m}sin(\theta)^{2l}}{d(cos(\theta)^{l-m})}
 \end{equation}
 
-3D\ac{GS} usually considers 4 bands of \ac{SH}, and consider the view-dependent color $c$: 
+3D\ac{GS} usually considers 4 bands of \ac{SH}, and has the view-dependent color $c$: 
 
 \begin{equation}
     c(\mathbf{d}) = \sum_{l=0}^{3}\sum_{m=-l}^{m=l}k_{l}^{m}Y_{l}^{m}(\mathbf{d})
 \end{equation}
 
-while the $k_{l}^{m}$ are the \ac{SH}-coefficient that needs to be learned during training per gaussian primitives. 
+\noindent where the $k_{l}^{m}$ are the \ac{SH}-coefficient that needs to be learned during training per Gaussian. 
 
 \section{Undetermined positional gradient signs in the ADC}
 \label{appendix:sign-gradient}
@@ -656,7 +656,7 @@ We thus already expressed such a per-pixel gradient for the x-axis as:
 This partial derivative is rather straightforward as $\partial L_{j}$ define the $L_{1}$ loss function between the rendered pixel color and the ground truth one. This first term is thus either set to $+1$ or $-1$ and its sign is undertermined as soon as the difference between predicted and ground truth color can either be positive or negative. 
 
     \item \textbf{Second term} $\frac{\partial c_{l}^{j}}{\partial \alpha^{(k)}}$ 
-The second term has to be developed to fully grasp why it also exists a sign ambiguity in its expression. Accounting on the expression of the rendered color in Equation \eqref{eq:gs-alpha-blending}, such partial derivative can thus be derived as follow. We drop here both the channel  \textit{l} as well as the pixel \textit{j} indexing for sake of clarity.  
+The second term has to be developed to fully grasp why there also exists a sign ambiguity in its expression. Accounting on the expression of the rendered color in Equation \eqref{eq:gs-alpha-blending}, such partial derivative can thus be derived as follow. We drop here both the channel  \textit{l} as well as the pixel \textit{j} indexing for sake of clarity.  
 
 \begin{equation}
     \frac{\partial c}{\partial \alpha^{(k)}} = c^{(k)} \times \prod \limits_{p=1}^{k-1}(1 - \alpha^{(p)}) - \sum \limits_{q=k+1}^{K} c^{(q)}\alpha^{(q)}\prod \limits_{p=1,p\neq q}^{q-1}(1 - \alpha^{(p)})

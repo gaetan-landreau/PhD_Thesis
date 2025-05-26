@@ -1,37 +1,22 @@
-\cleardoublepage
-\setcounter{page}{1}
-
-\chapter{Abstract}
-In the history of computing, the \ac{NVS} is a relatively recent and evolving field that emerged in the 1990s. It aims to generate images of a scene from unobserved viewpoints thanks to computer graphics, 3D reconstruction and computer vision concepts. While recent breakthroughs in \ac{DL} methods have enabled substantial advancements since the 2010s, the field continues to rely on its foundational basis, such as multi-view geometry and 3D reconstruction. Given its numerous potential applications \ac{NVS} is now in the spotlight, with uses ranging from \ac{VR} and \ac{AR} to 3D rendering, video games, and animation.
-
-We chose to adress in this thesis one of the most challenging scenarios in \ac{NVS}, where we rely solely on a single input image. 
-
-The first part of this manuscript focuses on how camera pose information can be encoded and provided as an apriori to a \ac{NN} through epipolar geometry considerations. The camera pose, which captures the relative displacement between the source view and the target view to be generated, is often encoded suboptimally. Through our work, we demonstrate that camera pose can be fully encoded within an image using epipolar lines. 
-
-In the second part, we highlight how \ac{NeRF} has massively impacted the way \ac{NVS} is adressed. Through recent advances in neural rendering, these architectures now possess interesting generative properties, allowing the synthesis of novel views without being limited to a single scene. However, the integration of epipolar constraints in these networks remains largely unexplored. We proposed a simple yet effective feature-based attention mechanism, leveraging on a secondary \ac{NeRF}. 
-
-Finally, we relax our initial single-view constraint to move closer to an industrial application. With multiple images, 3D\ac{GS} models accurately reconstruct the apparence and 3D geometric structures of a scene. We use this explicit 3D reconstruction to synthesize novel views at predetermined positions. However, rendering these viewpoints remains challenging since they are far from the views originally observed during training. 
-
-\cleardoublepage
-
-
-\chapter{R\'esum\'e}
 \selectlanguage{french}
+\chapter{R\'esum\'e}
 
-La synthèse de nouvelles vues est un domaine relativement récent dans l'histoire de l'informatique, qui remonte approximativement aux années 1990. Mêlant infographie, reconstruction 3D et vision par ordinateur, la synthèse de nouvelles vues cherche à générer des images d'une scène depuis des angles de vue non observés au préalable. Si l'avènement des techniques d'apprentissage dites \textit{profondes} a permis de réelles avancées sur ce sujet depuis 2010, le domaine conserve toujours ses anciens fondements, de la géométrie multi-vues à la reconstruction 3D. La synthèse de nouvelles vues est aujourd'hui au coeur de toutes les attentions, tant ses applications potentielles sont nombreuses, de la \ac{VR} et la \ac{AR}, en passant par le rendu 3D, et donc naturellement les jeux vidéo ou encore l'animation.
+\begin{mdframed}[linecolor=Prune,linewidth=1]
 
-Nous abordons dans cette thèse l'une des configurations les plus contraignantes en synthèse de nouvelles vues, en se restreignant à n'avoir en entrée qu'une seule et unique vue.
+    \textbf{Title:} Synthèse de nouvelles vues via des considérations 3D
+    
+    \noindent \textbf{Mots clés:} Synthèse d'images, Reconstruction 3D, Apprentissage profond
+    
+    \begin{multicols}{2}
+    \noindent \textbf{Résumé:} La synthèse de nouvelles vues cherche à générer des images d'une scène depuis des angles de vue non observés au préalable. Si l'avènement des techniques d'apprentissage dites \textit{profondes} a permis de réelles avancées sur ce sujet depuis 2010, le domaine conserve toujours ses anciens fondements, de la géométrie multi-vues à la reconstruction 3D. La synthèse de nouvelles vues est aujourd'hui au coeur de toutes les attentions, tant ses applications potentielles sont nombreuses, de la \ac{VR}, en passant par le rendu 3D, les jeux vidéo ou encore l'animation.
 
-La première partie de ce manuscrit s'intéresse à la manière dont l'information de pose de caméra peut être encodée et fournie comme un a priori à un réseau de neurones via des considérations issues de la géométrie épipolaire. En effet, cette information de pose relative, entre la vue d'entrée et celle à générer, est souvent encodée de manière sous-optimale. Nous montrons à travers nos travaux que cette pose peut être intégralement encodée dans une image, grâce aux droites épipolaires.
+Nous abordons dans cette thèse l'une des configurations les plus contraignantes en se restreignant à n'avoir en entrée qu'une seule et unique vue.
 
-Nous montrons ensuite comment l'avènement récent des \ac{NeRF} a complètement redéfini la manière d'aborder la synthèse de nouvelles vues. Ce type d'architecture possède désormais des propriétés génératives intéressantes, qui permettent de synthétiser de nouvelles vues sans se limiter à une scène unique. Cependant, l'intégration de contraintes épipolaires dans ces réseaux reste encore assez peu explorée, et nous proposons donc un mécanisme d'attention simple, basé sur des attributs issus d'un second \ac{NeRF}.
+La première partie s'intéresse à la manière dont la pose de la caméra peut être encodée et fournie comme un a priori à un \ac{NN}, via des considérations issues de la géométrie épipolaire. Cette transformation relative entre la vue d'entrée et celle à générer est souvent encodée de manière sous-optimale. Nous montrons à travers nos travaux que cette pose peut être encodée dans une image grâce aux droites épipolaires.
 
-Enfin, dans une dernière partie, nous élargissons et assouplissons notre contrainte initiale pour nous rapprocher davantage d'une application industrielle. En disposant de plusieurs vues, les modèles 3D\ac{GS} permettent de reconstruire fidèlement l'apparence et la structure géométrique 3D d'une scène. Nous utilisons cette reconstruction 3D  explicite pour synthétiser de nouvelles vues à des positions prédéterminées, éloignées des vues originellement observées lors de l'entraînement. 
+Nous montrons ensuite comment l'avènement récent des \ac{NeRF} a redéfini la manière d'aborder la synthèse de nouvelles vues. Ces architectures possède désormais des propriétés génératives intéressantes, qui permettent de synthétiser de nouvelles vues sans se limiter à une scène unique. Cependant, l’intégration de contraintes épipolaires dans ces réseaux reste encore peu explorée. Nous proposons donc un mécanisme d’attention simple, qui influe sur l’équation de rendu volumétrique du \ac{NeRF}.
 
-\selectlanguage{english}
+Enfin, dans une dernière partie, nous assouplissons notre contrainte initiale pour nous rapprocher davantage d'une application industrielle. En disposant de plusieurs vues, les modèles 3D\ac{GS} permettent de reconstruire fidèlement la structure 3D d'une scène. Nous utilisons cette reconstruction 3D explicite pour synthétiser de nouvelles vues à des positions prédéterminées, éloignées des vues originellement observées lors de l'entraînement. 
+\end{multicols}
 
-\cleardoublepage
-\chapter{Acknowledgments}
-
-
-% \selectlanguage{english}
+\end{mdframed}

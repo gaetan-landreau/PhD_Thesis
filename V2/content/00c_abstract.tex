@@ -1,0 +1,22 @@
+\selectlanguage{english}
+\chapter{Abstract}
+
+\begin{mdframed}[linecolor=Prune,linewidth=1]
+
+    \textbf{Title:} Novel view synthesis through 3D considerations
+    
+    \noindent \textbf{Keywords:} Novel view synthesis, 3D reconstruction, Deep learning
+    
+    \begin{multicols}{2}
+    \noindent \textbf{Abstract:}  \ac{NVS} aims to generate images of a scene from unobserved viewpoints. Although recent breakthroughs in \ac{DL} methods have enabled substantial advancements since the 2010s, the field continues to rely on its foundational basis, such as multi-view geometry and 3D reconstruction. Given its numerous potential applications \ac{NVS} is now in the spotlight, with uses ranging from \ac{VR} to 3D rendering, video games, and animation.
+
+In this thesis, we chose to address one of the most challenging scenarios using only a single image as input.
+
+The first part of this manuscript focuses on how camera pose information can be encoded and provided a priori to a \ac{NN} through epipolar geometry considerations. The relative camera displacement between the source view and the target view is often encoded suboptimally, and our work demonstrate that such a transformation can be encoded within an image using epipolar lines. 
+
+In a second part, we highlight how \ac{NeRF} has massively impacted the way \ac{NVS} is adressed. Through recent advances in neural rendering, these architectures now have interesting generative properties, allowing the synthesis of novel views without being limited to a single scene. However, epipolar constraints integration into these networks remains highly unexplored. We thus proposed in this work a simple yet effective feature-based attention mechanism that directly affects the \ac{NeRF} volume rendering equation. 
+
+Finally, we relax our initial single input view constraint to move closer to an industrial application. With multiple images, 3D\ac{GS} models accurately reconstruct the 3D structure of a scene.We use such an explicit 3D reconstruction to synthesize novel views at predetermined positions. However, rendering these viewpoints remains challenging since they are out-of-distribution from the training views.
+\end{multicols}
+
+\end{mdframed}

@@ -39,7 +39,12 @@
 \usepackage{makecell}
 \usepackage{float}
 \usepackage{lineno}
-\linenumbers
+%\linenumbers
+
+\usepackage{mdframed} % abstract - template from STIC. 
+\definecolor{Prune}{RGB}{99,0,60} % l14-33 : couleurs de la charte graphique upsaclay
+\usepackage{multirow} %% Pour mettre un texte sur plusieurs rangées
+\usepackage{multicol} %% Pour mettre un texte sur plusieurs colonnes
 
 % for an adaptable epigraph
 \renewcommand{\epigraphsize}{\small}
@@ -115,12 +120,12 @@
 \newboolean{skipAppendix}
 
 % By setting this to true, you skip the compiling of some chapters
-\setboolean{skipIntro}{false}
-\setboolean{skipEpipolarNVS}{false}
-\setboolean{skipEpiNeRF}{false}
-\setboolean{skipGauss}{false}
-\setboolean{skipConclusion}{false}
-\setboolean{skipAppendix}{false}
+\setboolean{skipIntro}{true}
+\setboolean{skipEpipolarNVS}{true}
+\setboolean{skipEpiNeRF}{true}
+\setboolean{skipGauss}{true}
+\setboolean{skipConclusion}{true}
+\setboolean{skipAppendix}{true}
 
 %\mtcsetoffset{minitoc}{-0.80em}
 
@@ -130,17 +135,28 @@
 
 %\tracingall
 
-\dominitoc
+%\dominitoc
 \selectlanguage{english}
-
 \frontmatter
-
 \input{content/00a_frontmatter.tex}
-\input{content/00b_resume.tex}
+\setcounter{page}{0}
 
-\cleardoublepage
-%\faketableofcontents
+\input{content/00b_resume.tex}
+\setcounter{page}{1}
+
+\input{content/00c_abstract.tex}
+\setcounter{page}{2}
+
+
+\input{content/00d_resume_etendu.tex}
+\setcounter{page}{3}
+% Assuming resume_etendu spans pages 4-5
+
+\input{content/00e_acknowledgments.tex}
+\setcounter{page}{4}  % Start acknowledgments on page 6
+
 \input{content/00_accronyms.tex}
+\setcounter{page}{5}
 
 \mainmatter
 
@@ -169,11 +185,10 @@
 \let\leftmark=\oldleftmark
 
 
-{
-	\backmatter
-	\input{content/06_bibliography.tex}
-	\cleardoublepage
-	}
+\backmatter
+\input{content/06_bibliography.tex}
+\cleardoublepage
+
 
 
   \appendix

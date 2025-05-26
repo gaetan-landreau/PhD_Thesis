@@ -24,11 +24,11 @@ The \ac{NVS} problem can be addressed from different perspectives, depending on 
 
 Eforts in \ac{NVS} are often oriented toward getting the most visually appealing results, mainly through \ac{NeRF}-based methods \citep{mildenhall2020nerf,wang2021neus,barron2021mip,barron2022mip}. However, only a limited number of works pursue another tricky challenge in \ac{NVS}: investigate a more efficient way to condition a single-image \ac{NVS} architecture on camera pose information. From a general perspective, associated methods often restrict the viewpoint transformation to the extrinsic matrix. Intrinsic is thus discarded since most methods for single-image \ac{NVS} ignore physical image formation properties and do not account for rendering, epipolar geometry or homography concepts. This camera pose conditioning task remains too weakly addressed in the current literature, which motivated us to tackle such an issue in an original way.
 
-While one of the most straightforward solutions to do so consists in encoding the relative camera viewpoint transformation as a feature vector, we claim such a method is sub-optimal, supported by a state-of-the-art works in monocular depth prediction \citep{zhao2021camera}. We thus propose in this work an innovative solution to encode the camera relative transformation as a 2D feature RGB image, by leveraging epipolar constraints. The new and implicitly encoded camera viewpoint transformation has a similar spatial resolution as the source image, somehow filling the dimensional gap between pose matrices and the RGB space. The contribution we propose in this first chapter is thus three-fold: 
+While one of the most straightforward solutions to do so consists in encoding the relative camera viewpoint transformation as a feature vector, we claim such a method is sub-optimal, supported by a state-of-the-art work in monocular depth prediction \citep{zhao2021camera}. We thus propose in this work an innovative solution to encode the camera relative transformation as a 2D feature RGB image, by leveraging epipolar constraints. The new and implicitly encoded camera viewpoint transformation has a similar spatial resolution as the source image, somehow filling the dimensional gap between pose matrices and the RGB space. The contribution we propose in this first chapter is thus three-fold: 
 \begin{itemize}
-	\item A strategy to encode the camera pose transformation into an implicit feature image builds upon epipolar geometry considerations. 
-	\item A neural network architecture that account for this camera viewpoint transformation encoding. 
-	\item A spectral loss function that focus onto image highest frequencies to better synthesize complex details.
+	\item A strategy to encode the camera pose transformation into an implicit feature image built upon epipolar geometry considerations. 
+	\item A neural network architecture that accounts for this camera viewpoint transformation encoding. 
+	\item A spectral loss function that focuses onto image highest frequencies to better synthesize complex details.
 \end{itemize}
 
 \section{Related work}
@@ -55,21 +55,21 @@ The pinhole camera model we consider is represented by the intrinsic matrix $K \
      \end{cases}
 \end{equation}
 
-with $(R_{s},t_{s})$ and $(R_{t},t_{t})$ respectively the source and target camera extrinsics. Epipolar geometry \citep{hartley2003multiple} addresses the projective geometry that connects two camera viewpoints and has various applications such as \ac{SfM} \citep{tamaazousti2011nonlinear}. Epipolar geometry aims to describe the relationship that stands between 3D world location and 2D pixel coordinates, given a stereo pair of cameras and their corresponding poses. The fundamental matrix $\mathbf{F}$ is a $3\times3$ matrix that entirely describes such 3D/2D mapping: 
+\noindent with $(R_{s},t_{s})$ and $(R_{t},t_{t})$ respectively the source and target camera extrinsics with respec to some arbitrary orthonormal coordinate frame. Epipolar geometry \citep{hartley2003multiple} addresses the projective geometry that connects two camera viewpoints and has various applications such as \ac{SfM} \citep{tamaazousti2011nonlinear}. Epipolar geometry aims to describe the relationship that stands between 3D world location and 2D pixel coordinates, given a stereo pair of cameras and their corresponding poses. The fundamental matrix $\mathbf{F}$ is a $3\times3$ matrix that entirely describes such 3D/2D mapping: 
 
 \begin{equation}
     \mathbf{F} = K^{-T} [T]_{X} R  K^{-1}
 \end{equation}
 
-with $[.]_{X}$ the skew-symmetric matrix representation of any one-dimensional vector. Given a pixel location\footnote{Homogeneous coordinates are implicitly used here but omitted for clarity reason} $p_{s}\in I_{s}$, such a fundamental matrix $\mathbf{F} \in \mathbb{R}^{3\times3}$ allows to define: 
+\noindent with $[.]_{X}$ the skew-symmetric matrix representation of any one-dimensional vector. Given a pixel location\footnote{Homogeneous coordinates are implicitly used here but omitted for clarity reason} $p_{s}\in I_{s}$, such a fundamental matrix $\mathbf{F} \in \mathbb{R}^{3\times3}$ allows to define: 
 
 \begin{equation}
     \mathcal{P}_{p_{s}} = \{p_{t}\in I_{t} | p_{t}^{T}\mathbf{F}p_{s} = 0 \}
 \end{equation}
 
-as the finite set of pixels from $I_{t}$ that live on the epipolar line defined by $l=\mathbf{F}p_{s}$. From a geometrical viewpoint, such line corresponds to the rendering (on $I_{t}$ camera plane) of the 3D ray that passed through both the camera center of $I_{s}$ and $p_{s}$. 
+\noindent as the set of pixels from $I_{t}$ that lie on the epipolar line defined by $l=\mathbf{F}p_{s}$. From a geometrical viewpoint, such a line corresponds to the rendering (on $I_{t}$ camera plane) of the 3D ray that passes through both the camera center of $I_{s}$ and $p_{s}$. 
 
-The fundamental matrix $\mathbf{F}$ establishes a pixel-to-line correspondence through a linear equation involving both the source and the target camera locations. When using epipolar geometry to encode the viewpoint transformation, a sampling strategy must be defined to determine which pixel locations from the source image $I_{s}$ will be used to compute these epipolar lines. Rather than randomly sampling location from the $H\times W$ possibilities, pixels are sampled based on a regular grid $\textbf{G}_{r}$ that spans the entire image, with parameter \textit{r} controlling the grid’s coarseness: 
+The fundamental matrix $\mathbf{F}$ establishes a pixel-to-line correspondence through a linear equation involving both the source, the target camera location and the intrinsics. When using epipolar geometry to encode the viewpoint transformation, a sampling strategy must be defined to determine which pixel locations from the source image $I_{s}$ will be used to compute these epipolar lines. Rather than randomly sampling location from the $H\times W$ possibilities, pixels are sampled based on a regular grid $\textbf{G}_{r}$ that spans the entire image, with parameter \textit{r} controlling the grid’s coarseness: 
 
 \begin{equation}
     \mathbf{G}_{r} = \left\{(p_{x},p_{y}) \in \{1,..,H\}\times \{1,..,W\} \Big\rvert \begin{array}{l}
@@ -82,11 +82,9 @@ The fundamental matrix $\mathbf{F}$ establishes a pixel-to-line correspondence t
 
 \subsection{Encode the camera viewpoint transformation}
 
-We encodes the relative camera motion between the source and target views by leveraging epipolar geometry. Its output is fed into one of the branches of our \ac{NVS} neural network, termed EpipolarNVS, as a feature image that implicitly represents the transformation that has occurred. We denote it as $E_{s\xrightarrow{}t}$.\newline 
+We encode the relative camera motion between the source and target views by leveraging epipolar geometry. Its output is fed into one of the branches of our \ac{NVS} neural network, termed EpipolarNVS, as a feature image that implicitly represents the transformation that has occurred. We denote it as $E_{s\xrightarrow{}t}$.\newline 
 
-The different stages involved to compute $E_{s\xrightarrow{}t}$ is presented in the pseudo-code below in Algorithm \ref{alg:pseudoCode}. \newline
-
-
+The different stages involved to compute $E_{s\xrightarrow{}t}$ are presented in the pseudo-code below in Algorithm \ref{alg:pseudoCode}. \newline
 
 \begin{algorithm}[htp!]
   \caption{Epipolar Encoding module \label{alg:pseudoCode}}
@@ -95,7 +93,7 @@ The different stages involved to compute $E_{s\xrightarrow{}t}$ is presented in 
   \SetKwInOut{Parameter}{parameter}
   \SetKwProg{Fn}{Function}{:}{}
   
-  \Input{Source image $I_{s}$, Feature map $F$, Set of grid points $\mathbf{G}_{r}$}
+  \Input{Source image $I_{s}$, Fondamental matrix $F$, Set of grid points $\mathbf{G}_{r}$}
   \Output{Epipolar encoded image $E_{s \rightarrow t}$}
   \medskip
   \KwResult{Epipolar encoded image $E_{s \rightarrow t}$}
@@ -113,7 +111,7 @@ The different stages involved to compute $E_{s\xrightarrow{}t}$ is presented in 
   }
 \end{algorithm}
 
-As shown in Algorithm \ref{alg:pseudoCode}, each epipolar line reported on $E_{s\xrightarrow{}t}$ has a distinct color with the sampled pixel from $I_s$. This implementation choice provides additional RGB prior information to the network regarding the color that should be generated, even though lightning issues are not considered. One might notice that the last epipolar lines plotted on $E_{s\xrightarrow{}t}$ may overwrite some previous lines, particularly at specific pixel locations (such as epipoles). Based on our experimental observations, we assert that the order of pixel sampling order (and thus epipolar line overwriting) does not significantly impact the training and inference performance of the model. 
+As shown in Algorithm \ref{alg:pseudoCode}, each epipolar line reported on $E_{s\xrightarrow{}t}$ has a distinct color with the sampled pixel from $I_s$. This implementation choice provides additional RGB prior information to the network regarding the color that should be generated, even though lighting issues are not considered. One might notice that the last epipolar lines plotted on $E_{s\xrightarrow{}t}$ may overwrite some previous lines, particularly at specific pixel locations (such as epipoles). Based on our experimental observations, we assert that the order of pixel sampling order (and thus epipolar line overwriting) does not significantly impact the training and inference performance of the model. 
 
 The encoding method depicted here can encode any form of camera viewpoint transformation without requiring structural adaptation. Indeed, most concurrent works need to modify their encoding strategies for viewpoint transformations, as continuous poses are processed differently than discrete ones, where a one-hot encoding strategy might be employed. 
 
@@ -140,7 +138,7 @@ Let's denote:
     \label{eq:delta_t}
 \end{equation}
 
-the difference between the two absolute translations $t_s$ and $t_t$. Absolute values are taken in Equation \eqref{eq:delta_t} since 2D planes coordinates are not standardised across scenes in KITTI \citep{geiger2012we} and Synthia \citep{ros2016synthia}. The meaningful scalar value of interest is referred as $\delta_{t}$ and is computed through:
+\noindent the difference between the two absolute translations $t_s$ and $t_t$. Absolute values are taken in Equation \eqref{eq:delta_t} since 2D plane coordinates are not standardised across scenes in KITTI \citep{geiger2012we} and Synthia \citep{ros2016synthia}. The meaningful scalar value of interest is referred as $\delta_{t}$ and is computed through:
  
  \begin{equation}
  \label{eq:2}
@@ -170,7 +168,7 @@ These properties enable the network to better understand the direction of the mo
       \includegraphics[width=\linewidth]{images/epipolarnvs/XYplaneMotionKITTI01.png}
       \caption{Sequence \textbf{01}}
     \end{subfigure}
-    \caption{\textbf{Car displacement in (XZ) plane.} We illustrate below the overall trajectory in the (XZ) plane of the car that drove across German's street to acquire the 00 and 01 sequences of the KITTI ~\citep{geiger2012we} dataset.}
+    \caption{\textbf{Car displacement in (XZ) plane.} We illustrate below the overall trajectory in the (XZ) plane of the car that drove across Germany streets to acquire the 00 and 01 sequences of the KITTI ~\citep{geiger2012we} dataset.}
     \label{fig:test}
   \end{figure}
 
@@ -189,7 +187,7 @@ The overall network architecture is presented in Figure \ref{fig:architecture}. 
   \label{fig:architecture}
 \end{figure}
 
-Final loss function is a weighted sum  of a \ac{MAE}, referred as $\mathcal{L}_{1}$, and a second term, called $\mathcal{L}_{spectral}$, directly inspired by prior super-resolution work \citep{fritsche2019frequency}. This latter term extensively focuses on the preserving high frequencies components in the synthesized novel viewpoint. Considering a 2D Gaussian filter $w_{gauss}$, an image $I$ can be decomposed into a low and a high-frequency components, denoted as $I^{LF}$ and $I^{HF}$, respectively. 
+Final loss function is a weighted sum  of a \ac{MAE}, referred as $\mathcal{L}_{1}$, and a second term, called $\mathcal{L}_{spectral}$, directly inspired by prior super-resolution work \citep{fritsche2019frequency}. This latter term extensively focuses on the preservation of high frequencies components in the synthesized novel viewpoint. Considering a 2D Gaussian filter $w_{gauss}$, an image $I$ can be decomposed into a low and a high-frequency components, denoted as $I^{LF}$ and $I^{HF}$, respectively. 
 
 \begin{equation}
 \begin{cases}
@@ -213,7 +211,7 @@ This spectral term extensively focuses on the highest frequencies of the target 
 \section{Experiments}
 All qualitative and quantitative results we obtained through our EpipolarNVS camera pose encoding strategy are presented in this section. \newline
 
-\noindent\textbf{Datasets.} We trained and tests our method on the \textit{chair} and \textit{car} classes from ShapeNet \citep{chang2015shapenet} as well as on real scene images from KITTI \citep{geiger2012we} and Synthia \citep{ros2016synthia}.
+\noindent\textbf{Datasets.} We trained and tested our method on the \textit{Chair} and \textit{Car} classes from ShapeNet \citep{chang2015shapenet} as well as on real scene images from KITTI \citep{geiger2012we} and Synthia \citep{ros2016synthia}.
 Results we reported for \citep{kim2020novel} slightly differ from the ones originally published by authors since we get consideration for a more challenging rendering scenario. We jittered camera pose in ShapeNet \citep{chang2015shapenet} and image borders from Synthia \citep{ros2016synthia} and KITTI \citep{geiger2012we} were not removed by center-cropping operation. Such changes are motivated and fully exposed in Appendix \ref{annex:epipolarnvs-dataset}.  \newline
 
 \noindent\textbf{Training - Testing.} We trained our model on 100,000 iterations, using the same training procedure as \citep{kim2020novel}. Inference scores were averaged over 100 runs with batch size of 16. \newline
@@ -344,17 +342,17 @@ As shown in Table \ref{tab:compExtended}, and considering the \ac{NN} architectu
       \includegraphics[width=\linewidth]{images/epipolarnvs/ablationSynthia2_New.png}
       \caption{Novel view synthesis.}
     \end{subfigure}
-    \caption{\textbf{Impact of a fourth channel into our encoding scheme.} Source view $I_s$ is fiwed while three consecutive target views from Synthia \cite{ros2016synthia} test set are represented. Adding an additional channel in our extended pose encoding allows the network to better apprehend the motion that occurred in Synthia \cite{ros2016synthia} and KITTI \cite{geiger2012we}. The grid $\textbf{G}_{15}$ has been used in both cases.}
+    \caption{\textbf{Impact of a fourth channel into our encoding scheme.} Source view $I_s$ is fixed while three consecutive target views from Synthia \cite{ros2016synthia} test set are represented. Adding an additional channel in our extended pose encoding allows the network to better apprehend the motion that occurred in Synthia \cite{ros2016synthia} and KITTI \cite{geiger2012we}. The grid $\textbf{G}_{15}$ has been used in both cases.}
     \label{fig:ablaSynthia}
   \end{figure}
 
-We highlight in Figure \ref{fig:ablaSynthia} the positive influence this additional channel has on the our model. While the manhole cover (which disappears in the target view sequence) is completely  ignored by the network trained with the three-channel pose encoding representation, the extended version we proposed successfully captures the car's motion.\newline 
+We highlight in Figure \ref{fig:ablaSynthia} the positive influence this additional channel has on our model. While the manhole cover (which disappears in the target view sequence) is completely  ignored by the network trained with the three-channel pose encoding representation, the extended version we proposed successfully captures the car's motion.\newline 
 
 \textbf{Spectral loss influence.}
 
 A second ablation study was conducted to highlight the extent to which the spectral loss function positively impacts the training of our model architecture. 
 \begin{table}[h!]
-    \caption{\textbf{Spectral loss influence ablation study.} Impact of the Spectral loss function over the four differerents datasets EpipolarNVS has been trained and tested on.  Best results are highlighted in \colorbox{red!25}{red}.}
+    \caption{\textbf{Spectral loss influence ablation study.} Impact of the Spectral loss function over the four different datasets EpipolarNVS has been trained and tested on.  Best results are highlighted in \colorbox{red!25}{red}.}
     \label{tab:spectral}
 \begin{center}
 \begin{tabular}{@{}||lllllllllllllllll@{}}
@@ -422,7 +420,7 @@ Using a regular grid $\textbf{G}_{r}$ always samples the same pixel locations fr
 We performed the same ablation study on the synthetic ShapeNet dataset ~\cite{chang2015shapenet} and observed identical observations.
 
 \section{Limitations and further work}
-The pose encoding strategy introduced in this chapter is an innovative solution for integrating camera pose transformations in into the \ac{NVS} problem. However, our method has some limitations that could be addressed to achieve better results in both image quality and processing speed. Since we compute the encoded viewpoint transformation $E_{s\xrightarrow{}t}$ \textit{on the fly} during training, our method is slower than the main concurrent work \citep{kim2020novel} to ours. Another potential improvement lies in making the camera data requirements more flexible, as our method currently requires both intrinsic and extrinsic parameters. 
+The pose encoding strategy introduced in this chapter is an innovative solution for integrating camera pose transformations into the \ac{NVS} problem. However, our method has some limitations that could be addressed to achieve better results in both image quality and processing speed. Since we compute the encoded viewpoint transformation $E_{s\xrightarrow{}t}$ \textit{on the fly} during training, our method is slower than the main concurrent work \citep{kim2020novel}. Another potential improvement lies in making the camera data requirements more flexible, as our method currently requires both intrinsic and extrinsic parameters. 
 
 Finally, future work could explore leveraging the encoded relative poses we designed to better constrain the network during training by using a cyclic loss function. Specifically, it would be possible to define a reversed encoded relative pose, $E_{t\xrightarrow{}s}$, by leveraging the predicted novel view. 
 
